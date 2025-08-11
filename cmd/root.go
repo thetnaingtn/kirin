@@ -27,11 +27,6 @@ func Execute() {
 		rootCmd.Println(err)
 		os.Exit(1)
 	}
-
-	// if err := rootCmd.Execute(); err != nil {
-	// 	rootCmd.Println(err)
-	// 	os.Exit(1)
-	// }
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
