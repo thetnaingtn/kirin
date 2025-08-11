@@ -1,17 +1,16 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
 
 var (
 	frontend string
+	cloneUrl = "https://github.com/thetnaingtn/kirin"
 )
 
 func init() {
@@ -48,9 +47,18 @@ func newRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cloneUrl := "https://github.com/thetnaingtn/kirin"
+	gitArgs := []string{
+		"clone",
+		cloneUrl,
+	}
 
-	c := exec.Command(git, "clone", cloneUrl, projectPath)
+	if frontend != "" {
+		gitArgs = append(gitArgs, "-b", fmt.Sprintf("frontend/%s", frontend))
+	}
+
+	gitArgs = append(gitArgs, projectPath)
+
+	c := exec.Command(git, gitArgs...)
 
 	if err := c.Run(); err != nil {
 		return err
@@ -85,37 +93,3 @@ Generate a new full-stack gRPC application with the provided frontend framework 
 Your new full-stack gRPC application has been created successfully!
 `
 )
-
-func replace(path, pattern, old, new string) error {
-	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		return replaceWalkFn(path, info, pattern, []byte(old), []byte(new))
-	})
-}
-
-func replaceWalkFn(path string, info os.FileInfo, pattern string, old, new []byte) (err error) {
-	var matched bool
-	if matched, err = filepath.Match(pattern, info.Name()); err != nil {
-		return
-	}
-
-	if matched {
-		cleanedPath := filepath.Clean(path)
-
-		var oldContent []byte
-		if oldContent, err = os.ReadFile(cleanedPath); err != nil {
-			return
-		}
-
-		if err = os.WriteFile(cleanedPath, bytes.Replace(oldContent, old, new, -1), 0); err != nil {
-			return
-		}
-	}
-
-	return
-}
