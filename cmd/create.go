@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,7 @@ var createCmd = &cobra.Command{
 
 func newRunE(cmd *cobra.Command, args []string) error {
 	cmd.Println("Scaffolding a new full-stack gRPC application...")
-
+	start := time.Now()
 	appName := args[0]
 	modName := appName
 	if len(args) > 1 {
@@ -47,18 +48,7 @@ func newRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	gitArgs := []string{
-		"clone",
-		cloneUrl,
-	}
-
-	if frontend != "" {
-		gitArgs = append(gitArgs, "-b", fmt.Sprintf("frontend/%s", frontend))
-	}
-
-	gitArgs = append(gitArgs, projectPath)
-
-	c := exec.Command(git, gitArgs...)
+	c := exec.Command(git, "clone", "-b", fmt.Sprintf("frontend/%s", frontend), cloneUrl, projectPath)
 
 	if err := c.Run(); err != nil {
 		return err
@@ -72,7 +62,7 @@ func newRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Println(createSuccessMessage)
+	cmd.Printf(createSuccessMessage, projectPath, modName, formatTime(time.Since(start)))
 
 	return nil
 }
@@ -90,6 +80,8 @@ Generate a new full-stack gRPC application with the provided frontend framework 
 `
 
 	createSuccessMessage = `
-Your new full-stack gRPC application has been created successfully!
+Create new application project in %s (module %s)
+
+✨  Done in %s.
 `
 )
