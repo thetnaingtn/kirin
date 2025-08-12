@@ -11,7 +11,7 @@ import (
 
 var (
 	frontend string
-	cloneUrl = "https://github.com/thetnaingtn/kirin"
+	cloneUrl = "https://github.com/thetnaingtn/boilerplate"
 )
 
 func init() {
@@ -54,11 +54,11 @@ func newRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := replace(projectPath, "go.mod", "kirin", modName); err != nil {
+	if err := replace(projectPath, "go.mod", "bolierplate", modName); err != nil {
 		return err
 	}
 
-	if err := replace(projectPath, "*.go", "kirin", modName); err != nil {
+	if err := replace(projectPath, "*.go", "bolierplate", modName); err != nil {
 		return err
 	}
 
@@ -69,13 +69,13 @@ func newRunE(cmd *cobra.Command, args []string) error {
 
 var (
 	createExamples = `
-wano create myapp
+kirin create myapp
 Generate a new full-stack gRPC application named "myapp" with default frontend (React)
 
-wano create myapp your.own/module/name
+kirin create myapp your.own/module/name
 Generate a new full-stack gRPC application with a custom module name
 
-wano create myapp --frontend vue
+kirin create myapp --frontend vue
 Generate a new full-stack gRPC application with the provided frontend framework (supported: react, vue, svelte)
 `
 

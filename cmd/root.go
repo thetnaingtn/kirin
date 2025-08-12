@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	longDescription = `⛩️  wano is a CLI tool that helps scaffolding full-stack gRPC applications with end-to-end type safety.`
+	longDescription = `🐉  kirin is a CLI tool that helps scaffolding full-stack gRPC applications with end-to-end type safety.`
 )
 
 var rootCmd = &cobra.Command{
-	Use:  "wano",
+	Use:  "kirin",
 	Long: longDescription,
 	RunE: rootRunE,
 }

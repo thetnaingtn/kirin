@@ -1,4 +1,4 @@
-module github.com/thetnaingtn/wano
+module github.com/thetnaingtn/kirin
 
 go 1.24.3
 
