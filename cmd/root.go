@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
 )
@@ -30,5 +31,12 @@ func Execute() {
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
-	return cmd.Help()
+	prompt := NewPrompt()
+
+	p := tea.NewProgram(prompt, tea.WithAltScreen())
+
+	if _, err := p.Run(); err != nil {
+		return err
+	}
+	return nil
 }
