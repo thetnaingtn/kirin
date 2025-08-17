@@ -13,9 +13,10 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:  "kirin",
-	Long: longDescription,
-	RunE: rootRunE,
+	Use:           "kirin",
+	Long:          longDescription,
+	RunE:          rootRunE,
+	SilenceErrors: true,
 }
 
 func init() {
@@ -23,8 +24,7 @@ func init() {
 }
 
 func Execute() {
-	if err := fang.Execute(context.Background(), rootCmd, fang.WithoutCompletions()); err != nil {
-		rootCmd.Println(err)
+	if err := fang.Execute(context.Background(), rootCmd, fang.WithoutCompletions(), fang.WithNotifySignal(os.Interrupt, os.Kill)); err != nil {
 		os.Exit(1)
 	}
 }
