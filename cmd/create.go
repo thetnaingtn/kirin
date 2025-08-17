@@ -10,12 +10,26 @@ import (
 )
 
 var (
-	frontend string
-	cloneUrl = "https://github.com/thetnaingtn/boilerplate"
+	frontend           string
+	cloneUrl           = "https://github.com/thetnaingtn/boilerplate"
+	supportedFrontends = []string{"React", "Vue", "Svelte"}
 )
 
+func normalizeFrontend(frontend string) string {
+	switch frontend {
+	case "react", "React":
+		return "react"
+	case "vue", "Vue":
+		return "vue"
+	case "svelte", "Svelte":
+		return "svelte"
+	default:
+		return ""
+	}
+}
+
 func init() {
-	createCmd.Flags().StringVarP(&frontend, "frontend", "f", "react", "Specify the frontend framework (supported: react, vue, svelte)")
+	createCmd.Flags().StringVarP(&frontend, "frontend", "f", "react", "Specify the frontend framework (supported: React, Vue, Svelte)")
 }
 
 var createCmd = &cobra.Command{
@@ -44,8 +58,15 @@ func newRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	git, err := exec.LookPath("git")
+
 	if err != nil {
-		return err
+		return fmt.Errorf("git is not installed or not found in PATH: %w", err)
+	}
+
+	frontend = normalizeFrontend(frontend)
+
+	if frontend == "" {
+		return fmt.Errorf("unsupported frontend framework: %s (supported: %v)", frontend, supportedFrontends)
 	}
 
 	c := exec.Command(git, "clone", "-b", fmt.Sprintf("frontend/%s", frontend), cloneUrl, projectPath)
