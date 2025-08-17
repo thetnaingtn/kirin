@@ -4,28 +4,21 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	frontend           string
-	cloneUrl           = "https://github.com/thetnaingtn/boilerplate"
-	supportedFrontends = []string{"React", "Vue", "Svelte"}
+	frontend string
+	cloneUrl = "https://github.com/thetnaingtn/boilerplate"
 )
 
-func normalizeFrontend(frontend string) string {
-	switch frontend {
-	case "react", "React":
-		return "react"
-	case "vue", "Vue":
-		return "vue"
-	case "svelte", "Svelte":
-		return "svelte"
-	default:
-		return ""
-	}
+func validateFrontend(frontend string) bool {
+	normalizeFrontend := strings.ToLower(frontend)
+	return slices.Contains([]string{"react", "vue", "svelte"}, normalizeFrontend)
 }
 
 func init() {
@@ -70,11 +63,11 @@ func newRunE(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("git is not installed or not found in PATH")
 	}
 
-	frontend = normalizeFrontend(frontend)
-
-	if frontend == "" {
-		return fmt.Errorf("unsupported frontend framework: %s (supported: %v)", frontend, supportedFrontends)
+	if !validateFrontend(frontend) {
+		return fmt.Errorf("unsupported frontend framework: %s (supported: React, Vue, Svelte)", frontend)
 	}
+
+	frontend = strings.ToLower(frontend)
 
 	c := exec.Command(git, "clone", "-b", fmt.Sprintf("frontend/%s", frontend), cloneUrl, projectPath)
 
@@ -82,11 +75,11 @@ func newRunE(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	if err = replace(projectPath, "go.mod", "bolierplate", modName); err != nil {
+	if err = replace(projectPath, "go.mod", "boilerplate", modName); err != nil {
 		return
 	}
 
-	if err = replace(projectPath, "*.go", "bolierplate", modName); err != nil {
+	if err = replace(projectPath, "*.go", "boilerplate", modName); err != nil {
 		return
 	}
 
