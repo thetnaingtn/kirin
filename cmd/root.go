@@ -13,10 +13,9 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "kirin",
-	Long:          longDescription,
-	RunE:          rootRunE,
-	SilenceErrors: true,
+	Use:  "kirin",
+	Long: longDescription,
+	RunE: rootRunE,
 }
 
 func init() {
