@@ -24,8 +24,7 @@ func init() {
 }
 
 func Execute() {
-	if err := fang.Execute(context.Background(), rootCmd, fang.WithoutCompletions()); err != nil {
-		rootCmd.Println(err)
+	if err := fang.Execute(context.Background(), rootCmd, fang.WithoutCompletions(), fang.WithNotifySignal(os.Interrupt, os.Kill)); err != nil {
 		os.Exit(1)
 	}
 }
