@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/thetnaingtn/kirin/internal/ui"
 )
 
 const (
@@ -20,14 +21,6 @@ const (
 	stepFrontendLibrary
 	stepStartScaffolding
 )
-
-type frontendItem struct {
-	title, value, desc string
-}
-
-func (i frontendItem) Title() string       { return i.title }
-func (i frontendItem) Description() string { return i.desc }
-func (i frontendItem) FilterValue() string { return i.title }
 
 type Prompt struct {
 	latency        time.Duration
@@ -42,49 +35,20 @@ type Prompt struct {
 	spinner        spinner.Model
 }
 
-var (
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FAFAFA")).
-			Background(lipgloss.Color("#7D56F4")).
-			Padding(0, 1)
-
-	inputStyle = lipgloss.NewStyle().
-			Padding(1, 2)
-
-	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#626262"))
-)
-
 func NewPrompt() *Prompt {
 	// Initialize spinner
 	s := spinner.New()
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	s.Spinner = spinner.MiniDot
 	// Create app name input
-	appInput := textinput.New()
-	appInput.Placeholder = "Enter your app name..."
-	appInput.Focus()
-	appInput.CharLimit = 50
-	appInput.Width = 40
+	appInput := ui.NewAppNameInput()
 
 	// Create module input
-	moduleInput := textinput.New()
-	moduleInput.Placeholder = "Enter your module name (e.g., github.com/user/app)..."
-	moduleInput.CharLimit = 100
-	moduleInput.Width = 50
+	moduleInput := ui.NewModuleInput()
 
 	// Create frontend library list
-	items := []list.Item{
-		frontendItem{title: "Vue", value: "vue", desc: "Progressive JavaScript framework"},
-		frontendItem{title: "React", value: "react", desc: "JavaScript library for building user interfaces"},
-		frontendItem{title: "Svelte", value: "svelte", desc: "Cybernetically enhanced web apps"},
-	}
 
-	frontendList := list.New(items, list.NewDefaultDelegate(), 60, 10)
-	frontendList.Title = "Choose Frontend Library"
-	frontendList.SetShowStatusBar(false)
-	frontendList.SetFilteringEnabled(false)
-	frontendList.Styles.Title = titleStyle
+	frontendList := ui.NewFrontendList()
 
 	return &Prompt{
 		step:         stepAppName,
@@ -130,8 +94,8 @@ func (p *Prompt) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					p.Next()
 				}
 			case stepFrontendLibrary:
-				if selectedItem, ok := p.frontendList.SelectedItem().(frontendItem); ok {
-					p.frontendChoice = selectedItem.value
+				if selectedItem, ok := p.frontendList.SelectedItem().(ui.FrontendItem); ok {
+					p.frontendChoice = selectedItem.Value()
 					cmds = append(cmds, startScaffolding, p.createProject())
 				}
 			}
@@ -144,7 +108,7 @@ func (p *Prompt) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.quitting = true
 
 	case tea.WindowSizeMsg:
-		h, v := inputStyle.GetFrameSize()
+		h, v := ui.InputStyle.GetFrameSize()
 		p.appNameInput.Width = msg.Width - h
 		p.moduleInput.Width = msg.Width - h
 		p.frontendList.SetWidth(msg.Width - h)
@@ -181,31 +145,31 @@ func (p *Prompt) View() string {
 
 	switch p.step {
 	case stepAppName:
-		b.WriteString(titleStyle.Render("Step 1/3: App Name"))
+		b.WriteString(ui.TitleStyle.Render("Step 1/3: App Name"))
 		b.WriteString("\n\n")
 		b.WriteString("What would you like to name your app?\n\n")
-		b.WriteString(inputStyle.Render(p.appNameInput.View()))
+		b.WriteString(ui.InputStyle.Render(p.appNameInput.View()))
 		b.WriteString("\n\n")
-		b.WriteString(helpStyle.Render("Press Enter to continue • Press q to quit"))
+		b.WriteString(ui.HelpStyle.Render("Press Enter to continue • Press q to quit"))
 
 	case stepModuleName:
-		b.WriteString(titleStyle.Render("Step 2/3: Module Name"))
+		b.WriteString(ui.TitleStyle.Render("Step 2/3: Module Name"))
 		b.WriteString("\n\n")
 		b.WriteString(fmt.Sprintf("App Name: %s\n", p.appName))
 		b.WriteString("What's your Go module name?\n\n")
-		b.WriteString(inputStyle.Render(p.moduleInput.View()))
+		b.WriteString(ui.InputStyle.Render(p.moduleInput.View()))
 		b.WriteString("\n\n")
-		b.WriteString(helpStyle.Render("Press Enter to continue • Press q to quit"))
+		b.WriteString(ui.HelpStyle.Render("Press Enter to continue • Press q to quit"))
 
 	case stepFrontendLibrary:
-		b.WriteString(titleStyle.Render("Step 3/3: Frontend Library"))
+		b.WriteString(ui.TitleStyle.Render("Step 3/3: Frontend Library"))
 		b.WriteString("\n\n")
 		b.WriteString(fmt.Sprintf("App Name: %s\n", p.appName))
 		b.WriteString(fmt.Sprintf("Module Name: %s\n", p.moduleName))
 		b.WriteString("Choose your frontend library:\n\n")
 		b.WriteString(p.frontendList.View())
 		b.WriteString("\n")
-		b.WriteString(helpStyle.Render("Press Enter to select • Press q to quit"))
+		b.WriteString(ui.HelpStyle.Render("Press Enter to select • Press q to quit"))
 
 	case stepStartScaffolding:
 		b.WriteString("Here's your configuration:\n\n")
