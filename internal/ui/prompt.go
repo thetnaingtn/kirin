@@ -1,9 +1,7 @@
-package cmd
+package ui
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -12,7 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/thetnaingtn/kirin/internal/ui"
+	"github.com/thetnaingtn/kirin/internal/kirin"
 )
 
 const (
@@ -33,6 +31,7 @@ type Prompt struct {
 	frontendChoice string
 	quitting       bool
 	spinner        spinner.Model
+	err            error
 }
 
 func NewPrompt() *Prompt {
@@ -41,14 +40,14 @@ func NewPrompt() *Prompt {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	s.Spinner = spinner.MiniDot
 	// Create app name input
-	appInput := ui.NewAppNameInput()
+	appInput := NewAppNameInput()
 
 	// Create module input
-	moduleInput := ui.NewModuleInput()
+	moduleInput := NewModuleInput()
 
 	// Create frontend library list
 
-	frontendList := ui.NewFrontendList()
+	frontendList := NewFrontendList()
 
 	return &Prompt{
 		step:         stepAppName,
@@ -94,7 +93,7 @@ func (p *Prompt) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					p.Next()
 				}
 			case stepFrontendLibrary:
-				if selectedItem, ok := p.frontendList.SelectedItem().(ui.FrontendItem); ok {
+				if selectedItem, ok := p.frontendList.SelectedItem().(FrontendItem); ok {
 					p.frontendChoice = selectedItem.Value()
 					cmds = append(cmds, startScaffolding, p.createProject())
 				}
@@ -106,9 +105,11 @@ func (p *Prompt) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case scaffoldFinish:
 		p.quitting = true
+	case scaffoldError:
+		p.err = msg.err
 
 	case tea.WindowSizeMsg:
-		h, v := ui.InputStyle.GetFrameSize()
+		h, v := InputStyle.GetFrameSize()
 		p.appNameInput.Width = msg.Width - h
 		p.moduleInput.Width = msg.Width - h
 		p.frontendList.SetWidth(msg.Width - h)
@@ -143,33 +144,40 @@ func (p *Prompt) View() string {
 		return b.String()
 	}
 
+	if p.err != nil {
+		b.WriteString(ErrorStyle.Render(fmt.Sprintf("Can't create project at the moment: %s", p.err.Error())))
+		b.WriteString("\n\n")
+		b.WriteString(HelpStyle.Render("Press q to quit"))
+		return b.String()
+	}
+
 	switch p.step {
 	case stepAppName:
-		b.WriteString(ui.TitleStyle.Render("Step 1/3: App Name"))
+		b.WriteString(TitleStyle.Render("Step 1/3: App Name"))
 		b.WriteString("\n\n")
 		b.WriteString("What would you like to name your app?\n\n")
-		b.WriteString(ui.InputStyle.Render(p.appNameInput.View()))
+		b.WriteString(InputStyle.Render(p.appNameInput.View()))
 		b.WriteString("\n\n")
-		b.WriteString(ui.HelpStyle.Render("Press Enter to continue • Press q to quit"))
+		b.WriteString(HelpStyle.Render("Press Enter to continue • Press q to quit"))
 
 	case stepModuleName:
-		b.WriteString(ui.TitleStyle.Render("Step 2/3: Module Name"))
+		b.WriteString(TitleStyle.Render("Step 2/3: Module Name"))
 		b.WriteString("\n\n")
 		b.WriteString(fmt.Sprintf("App Name: %s\n", p.appName))
 		b.WriteString("What's your Go module name?\n\n")
-		b.WriteString(ui.InputStyle.Render(p.moduleInput.View()))
+		b.WriteString(InputStyle.Render(p.moduleInput.View()))
 		b.WriteString("\n\n")
-		b.WriteString(ui.HelpStyle.Render("Press Enter to continue • Press q to quit"))
+		b.WriteString(HelpStyle.Render("Press Enter to continue • Press q to quit"))
 
 	case stepFrontendLibrary:
-		b.WriteString(ui.TitleStyle.Render("Step 3/3: Frontend Library"))
+		b.WriteString(TitleStyle.Render("Step 3/3: Frontend Library"))
 		b.WriteString("\n\n")
 		b.WriteString(fmt.Sprintf("App Name: %s\n", p.appName))
 		b.WriteString(fmt.Sprintf("Module Name: %s\n", p.moduleName))
 		b.WriteString("Choose your frontend library:\n\n")
 		b.WriteString(p.frontendList.View())
 		b.WriteString("\n")
-		b.WriteString(ui.HelpStyle.Render("Press Enter to select • Press q to quit"))
+		b.WriteString(HelpStyle.Render("Press Enter to select • Press q to quit"))
 
 	case stepStartScaffolding:
 		b.WriteString("Here's your configuration:\n\n")
@@ -188,9 +196,6 @@ func (p *Prompt) GetResults() (appName, moduleName, frontendChoice string) {
 	return p.appName, p.moduleName, p.frontendChoice
 }
 
-type scaffoldFinish struct{}
-type scaffoldStart struct{}
-
 func (p *Prompt) createProject() tea.Cmd {
 	return func() tea.Msg {
 		start := time.Now()
@@ -200,27 +205,12 @@ func (p *Prompt) createProject() tea.Cmd {
 			modName = p.moduleName
 		}
 
-		wd, _ := os.Getwd()
-		projectPath := fmt.Sprintf("%s%c%s", wd, os.PathSeparator, appName)
-
-		_ = os.Mkdir(projectPath, 0750)
-
-		git, _ := exec.LookPath("git")
-
-		c := exec.Command(git, "clone", "-b", fmt.Sprintf("frontend/%s", p.frontendChoice), cloneUrl, projectPath)
-
-		_ = c.Run()
-
-		_ = replace(projectPath, "go.mod", "bolierplate", modName)
-
-		_ = replace(projectPath, "*.go", "bolierplate", modName)
+		if err := kirin.CreateProject(appName, modName, p.frontendChoice); err != nil {
+			return scaffoldError{err: err}
+		}
 
 		p.latency = time.Since(start)
 
 		return scaffoldFinish{}
 	}
-}
-
-func startScaffolding() tea.Msg {
-	return scaffoldStart{}
 }

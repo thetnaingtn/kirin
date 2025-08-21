@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/thetnaingtn/kirin/internal/kirin"
 )
 
 var (
@@ -34,7 +33,7 @@ var createCmd = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 }
 
-func newRunE(cmd *cobra.Command, args []string) (err error) {
+func newRunE(cmd *cobra.Command, args []string) error {
 	cmd.Println("Scaffolding a new full-stack gRPC application...")
 	start := time.Now()
 	appName := args[0]
@@ -43,47 +42,19 @@ func newRunE(cmd *cobra.Command, args []string) (err error) {
 		modName = args[1]
 	}
 
-	wd, _ := os.Getwd()
-	projectPath := fmt.Sprintf("%s%c%s", wd, os.PathSeparator, appName)
-
-	if err = os.Mkdir(projectPath, 0750); err != nil {
-		return
-	}
-
-	defer func() {
-		if err != nil {
-			os.RemoveAll(projectPath)
-		}
-	}()
-
-	var git string
-	git, err = exec.LookPath("git")
-
-	if err != nil {
-		return fmt.Errorf("git is not installed or not found in PATH")
-	}
-
 	if !validateFrontend(frontend) {
 		return fmt.Errorf("unsupported frontend framework: %s (supported: React, Vue, Svelte)", frontend)
 	}
 
 	frontend = strings.ToLower(frontend)
 
-	c := exec.Command(git, "clone", "-b", fmt.Sprintf("frontend/%s", frontend), cloneUrl, projectPath)
-
-	if err := c.Run(); err != nil {
+	if err := kirin.CreateProject(appName, modName, frontend); err != nil {
 		return err
 	}
 
-	if err = replace(projectPath, "go.mod", "boilerplate", modName); err != nil {
-		return
-	}
+	duration := time.Since(start)
 
-	if err = replace(projectPath, "*.go", "boilerplate", modName); err != nil {
-		return
-	}
-
-	cmd.Printf(createSuccessMessage, projectPath, modName, formatTime(time.Since(start)))
+	cmd.Printf(createSuccessMessage, "", modName, formatTime(duration))
 
 	return nil
 }

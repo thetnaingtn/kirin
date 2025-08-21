@@ -13,4 +13,7 @@ var (
 
 	HelpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#626262"))
+
+	ErrorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FF0000"))
 )

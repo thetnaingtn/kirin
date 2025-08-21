@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
+	"github.com/thetnaingtn/kirin/internal/ui"
 )
 
 const (
@@ -30,7 +31,7 @@ func Execute() {
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
-	prompt := NewPrompt()
+	prompt := ui.NewPrompt()
 
 	p := tea.NewProgram(prompt, tea.WithAltScreen())
 
