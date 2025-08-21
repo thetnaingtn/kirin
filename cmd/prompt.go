@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -18,8 +19,6 @@ const (
 	stepModuleName
 	stepFrontendLibrary
 	stepStartScaffolding
-	stepEndScaffolding
-	stepComplete
 )
 
 type frontendItem struct {
@@ -40,6 +39,7 @@ type Prompt struct {
 	moduleName     string
 	frontendChoice string
 	quitting       bool
+	spinner        spinner.Model
 }
 
 var (
@@ -56,6 +56,10 @@ var (
 )
 
 func NewPrompt() *Prompt {
+	// Initialize spinner
+	s := spinner.New()
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	s.Spinner = spinner.MiniDot
 	// Create app name input
 	appInput := textinput.New()
 	appInput.Placeholder = "Enter your app name..."
@@ -87,11 +91,12 @@ func NewPrompt() *Prompt {
 		appNameInput: appInput,
 		moduleInput:  moduleInput,
 		frontendList: frontendList,
+		spinner:      s,
 	}
 }
 
 func (p *Prompt) Next() {
-	if p.step < stepComplete {
+	if p.step < stepStartScaffolding {
 		p.step++
 	}
 }
@@ -131,13 +136,12 @@ func (p *Prompt) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-
 	case scaffoldStart:
 		p.Next()
+		cmds = append(cmds, p.spinner.Tick)
 
 	case scaffoldFinish:
-		p.Next()
-		// return p, tea.Quit
+		p.quitting = true
 
 	case tea.WindowSizeMsg:
 		h, v := inputStyle.GetFrameSize()
@@ -155,17 +159,25 @@ func (p *Prompt) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.moduleInput, cmd = p.moduleInput.Update(msg)
 	case stepFrontendLibrary:
 		p.frontendList, cmd = p.frontendList.Update(msg)
+	case stepStartScaffolding:
+		p.spinner, cmd = p.spinner.Update(msg)
+		cmds = append(cmds, cmd)
 	}
+
 	cmds = append(cmds, cmd)
+
 	return p, tea.Batch(cmds...)
 }
 
 func (p *Prompt) View() string {
-	if p.quitting {
-		return ""
-	}
-
 	var b strings.Builder
+
+	if p.quitting {
+		b.WriteString(fmt.Sprintf("Create new application project in %s (module %s)\n\n", p.appName, p.moduleName))
+		b.WriteString(fmt.Sprintf("✨ Done in %s. Press q to quit.\n", p.latency))
+
+		return b.String()
+	}
 
 	switch p.step {
 	case stepAppName:
@@ -201,11 +213,7 @@ func (p *Prompt) View() string {
 		b.WriteString(fmt.Sprintf("📦 Module Name: %s\n", p.moduleName))
 		b.WriteString(fmt.Sprintf("⚡ Frontend Library: %s\n", p.frontendChoice))
 		b.WriteString("\n")
-		b.WriteString("Scaffolding your project...\n\n")
-
-	case stepEndScaffolding:
-		b.WriteString(fmt.Sprintf("Create new application project in %s (module %s)\n\n", p.appName, p.moduleName))
-		b.WriteString(fmt.Sprintf("✨  Done in %s.", p.latency))
+		b.WriteString(fmt.Sprintf("%s Scaffolding your project...\n\n", p.spinner.View()))
 	}
 
 	return b.String()
