@@ -42,6 +42,12 @@ func CreateProject(appName, moduleName, frontendChoice string) (err error) {
 		return
 	}
 
+	// Remove .git folder to allow user to initialize their own git repository
+	gitDir := filepath.Join(projectPath, ".git")
+	if err = os.RemoveAll(gitDir); err != nil {
+		return fmt.Errorf("failed to remove .git directory: %w", err)
+	}
+
 	return nil
 }
 
