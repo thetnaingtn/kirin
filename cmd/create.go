@@ -12,7 +12,6 @@ import (
 
 var (
 	frontend string
-	cloneUrl = "https://github.com/thetnaingtn/boilerplate"
 )
 
 func validateFrontend(frontend string) bool {
