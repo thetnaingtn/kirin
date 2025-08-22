@@ -53,7 +53,7 @@ func newRunE(cmd *cobra.Command, args []string) error {
 
 	duration := time.Since(start)
 
-	cmd.Printf(createSuccessMessage, "", modName, kirin.FormatTime(duration))
+	cmd.Printf(createSuccessMessage, appName, modName, kirin.FormatTime(duration))
 
 	return nil
 }
@@ -67,11 +67,11 @@ kirin create myapp your.own/module/name
 Generate a new full-stack gRPC application with a custom module name
 
 kirin create myapp --frontend vue
-Generate a new full-stack gRPC application with the provided frontend framework (supported: react, vue, svelte)
+Generate a new full-stack gRPC application with the provided frontend framework (supported: React, Vue, Svelte)
 `
 
 	createSuccessMessage = `
-Create new application project in %s (module %s)
+Create new application project named: %s (module %s)
 
 ✨  Done in %s.
 `

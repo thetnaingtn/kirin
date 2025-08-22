@@ -138,7 +138,7 @@ func (p *Prompt) View() string {
 	var b strings.Builder
 
 	if p.quitting {
-		b.WriteString(fmt.Sprintf("Create new application project in %s (module %s)\n\n", p.appName, p.moduleName))
+		b.WriteString(fmt.Sprintf("Create new application project named: %s (module %s)\n\n", p.appName, p.moduleName))
 		b.WriteString(fmt.Sprintf("✨ Done in %s. Press q to quit.\n", p.latency))
 
 		return b.String()

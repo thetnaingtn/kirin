@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	longDescription = `🐉  kirin is a CLI tool that helps scaffolding full-stack gRPC applications with end-to-end type safety.`
+	longDescription = `🐉  kirin is a CLI tool that scaffolds full-stack gRPC applications with end-to-end type safety.`
 )
 
 var rootCmd = &cobra.Command{
