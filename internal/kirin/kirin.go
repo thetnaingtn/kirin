@@ -1,0 +1,99 @@
+package kirin
+
+import (
+	"bytes"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
+)
+
+func CreateProject(appName, moduleName, frontendChoice string) (err error) {
+	cloneUrl := "https://github.com/thetnaingtn/atlas"
+
+	wd, _ := os.Getwd()
+	projectPath := fmt.Sprintf("%s%c%s", wd, os.PathSeparator, appName)
+
+	defer func() {
+		if err != nil {
+			os.RemoveAll(projectPath)
+		}
+	}()
+
+	var git string
+	git, err = exec.LookPath("git")
+
+	if err != nil {
+		return fmt.Errorf("git is not installed or not found in PATH")
+	}
+
+	cmd := exec.Command(git, "clone", "-b", fmt.Sprintf("frontend/%s", frontendChoice), cloneUrl, projectPath)
+
+	if err = cmd.Run(); err != nil {
+		return
+	}
+
+	if err = replace(projectPath, "go.mod", "atlas", moduleName); err != nil {
+		return
+	}
+
+	if err = replace(projectPath, "*.go", "atlas", moduleName); err != nil {
+		return
+	}
+
+	// Remove .git folder to allow user to initialize their own git repository
+	gitDir := filepath.Join(projectPath, ".git")
+	if err = os.RemoveAll(gitDir); err != nil {
+		return fmt.Errorf("failed to remove .git directory: %w", err)
+	}
+
+	return nil
+}
+
+func replace(path, pattern, old, new string) error {
+	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		return replaceWalkFn(path, info, pattern, []byte(old), []byte(new))
+	})
+}
+
+func replaceWalkFn(path string, info os.FileInfo, pattern string, old, new []byte) (err error) {
+	var matched bool
+	if matched, err = filepath.Match(pattern, info.Name()); err != nil {
+		return
+	}
+
+	if matched {
+		cleanedPath := filepath.Clean(path)
+
+		var oldContent []byte
+		if oldContent, err = os.ReadFile(cleanedPath); err != nil {
+			return
+		}
+
+		if err = os.WriteFile(cleanedPath, bytes.ReplaceAll(oldContent, old, new), 0); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func FormatTime(d time.Duration) time.Duration {
+	switch {
+	case d > time.Second:
+		return d.Truncate(time.Second / 100)
+	case d > time.Millisecond:
+		return d.Truncate(time.Millisecond / 100)
+	case d > time.Microsecond:
+		return d.Truncate(time.Microsecond / 100)
+	default:
+		return d
+	}
+}
