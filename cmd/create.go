@@ -54,7 +54,7 @@ func newRunE(cmd *cobra.Command, args []string) error {
 
 	duration := time.Since(start)
 
-	cmd.Printf(createSuccessMessage, "", modName, formatTime(duration))
+	cmd.Printf(createSuccessMessage, "", modName, kirin.FormatTime(duration))
 
 	return nil
 }

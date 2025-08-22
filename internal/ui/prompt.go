@@ -209,7 +209,7 @@ func (p *Prompt) createProject() tea.Cmd {
 			return scaffoldError{err: err}
 		}
 
-		p.latency = time.Since(start)
+		p.latency = kirin.FormatTime(time.Since(start))
 
 		return scaffoldFinish{}
 	}
