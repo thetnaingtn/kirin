@@ -9,7 +9,7 @@ import (
 )
 
 func CreateProject(appName, moduleName, frontendChoice string) (err error) {
-	cloneUrl := "https://github.com/thetnaingtn/boilerplate"
+	cloneUrl := "https://github.com/thetnaingtn/atlas"
 
 	wd, _ := os.Getwd()
 	projectPath := fmt.Sprintf("%s%c%s", wd, os.PathSeparator, appName)
@@ -33,11 +33,11 @@ func CreateProject(appName, moduleName, frontendChoice string) (err error) {
 		return
 	}
 
-	if err = replace(projectPath, "go.mod", "boilerplate", moduleName); err != nil {
+	if err = replace(projectPath, "go.mod", "atlas", moduleName); err != nil {
 		return
 	}
 
-	if err = replace(projectPath, "*.go", "boilerplate", moduleName); err != nil {
+	if err = replace(projectPath, "*.go", "atlas", moduleName); err != nil {
 		return
 	}
 
