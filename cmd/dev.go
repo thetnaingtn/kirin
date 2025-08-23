@@ -37,7 +37,7 @@ func devRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		<-sigs
