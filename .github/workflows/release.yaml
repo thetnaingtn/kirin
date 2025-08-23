@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --force --tags
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
+      
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: |
+            dist
+            !homebrew
+            !dist/**/*.tar.gz
+            !dist/**/*.zip
+            !dist/**/*.yaml
+            !dist/**/*.txt
+  
+  publish-binaries:
+    needs: goreleaser
+    strategy:
+      matrix:
+        os: ["windows", "linux", "darwin"]
+        arch: ["amd64", "arm64"]
+    runs-on: ubuntu-latest
+    name: Publish binaries for different architectures and platforms to NPM
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with: 
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+      
+      - name: Download uploaded binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: ./dist/
+
+      - name: Set the release version
+        shell: bash
+        run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v3
+      
+      - name: Publish to NPM
+        shell: bash
+        run: |
+          cd npm
+          bin="kirin"
+          version="${{ env.RELEASE_VERSION }}"
+          export version
+          node_os="${{ matrix.os }}"
+          export node_os
+          node_arch="${{ matrix.arch }}"
+          export node_arch
+          export node_pkg="${bin}-${node_os}-${node_arch}"
+          mkdir -p "${node_pkg}/bin"
+          envsubst < package.json.tmpl > "${node_pkg}/package.json"
+          binary_path=$(cat ../dist/artifacts.json | jq -r ".[] | select(.type == \"Binary\") | select(.goos == \"${{ matrix.os }}\") | select(.goarch == \"${{ matrix.arch }}\") | .path" )
+          install -D ../${binary_path} ${node_pkg}/bin/${bin}
+          cd "${node_pkg}"
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_API_KEY}}
+    
+  publish-kirin:
+    needs: publish-binaries
+    name: Publish base package to NPM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+  
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish to NPM
+        shell: bash
+        run: |
+          cd npm/kirin
+          pnpm install --no-frozen-lockfile
+          pnpm build
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_API_KEY}}

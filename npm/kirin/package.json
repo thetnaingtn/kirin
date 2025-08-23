@@ -1,0 +1,35 @@
+{
+    "name": "kirin",
+    "version": "0.1.0",
+    "bin": "lib/index.js",
+    "description": "Synchronize your forks with ease",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/thetnaingtn/kirin.git"
+    },
+    "keywords": ["go", "cli", "gRPC", "gRPC-Web", "gRPC-Gateway", "bubbletea"],
+    "license": "MIT OR Apache-2.0",
+    "homepage": "https://github.com/thetnaingtn/kirin#readme",
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "build": "tsc",
+        "dev": "pnpm build && node lib/index.js"
+    },
+    "devDependencies": {
+        "@types/node": "24.0.3",
+        "@typescript-eslint/eslint-plugin": "8.34.1",
+        "@typescript-eslint/parser": "8.34.1",
+        "eslint": "9.29.0",
+        "typescript": "5.8.3"
+    },
+    "optionalDependencies": {
+        "kirin-darwin-arm64": "0.1.0",
+        "kirin-darwin-amd64": "0.1.0",
+        "kirin-linux-arm64": "0.1.0",
+        "kirin-linux-amd64": "0.1.0",
+        "kirin-windows-arm64": "0.1.0",
+        "kirin-windows-amd64": "0.1.0"
+    }
+}
