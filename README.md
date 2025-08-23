@@ -13,7 +13,7 @@
 
 ## 🚀 What is kirin?
 
-kirin is a powerful scaffolding tool that creates full-stack gRPC applications with **frontend and backend coexisting in the same folder structure**. Since **Go 1.18**, embedding files directly into binary executables is natively supported, and kirin leverages this powerful feature to create **self-contained applications** that include both frontend assets and backend logic in a single executable.
+kirin is a scaffolding tool that creates full-stack gRPC applications with **frontend and backend coexisting in the same folder structure**. Since **Go 1.18**, embedding files directly into binary executables is natively supported, and kirin leverages this feature to create **self-contained applications** that include both frontend assets and backend logic in a single executable.
 
 This approach enables seamless type generation, easier development workflow, and eliminates the complexity of managing separate repositories for frontend and backend.
 
