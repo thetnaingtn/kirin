@@ -9,7 +9,7 @@
     },
     "keywords": ["go", "cli", "gRPC", "gRPC-Web", "gRPC-Gateway", "bubbletea"],
     "license": "MIT OR Apache-2.0",
-    "homepage": "https://github.com/thetnaingtn/kirin#readme",
+    "homepage": "https://github.com/thetnaingtn/kirin?tab=readme-ov-file#kirin",
     "scripts": {
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
