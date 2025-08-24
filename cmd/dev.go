@@ -1,35 +1,41 @@
 package cmd
 
 import (
-	"flag"
+	goflag "flag"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/air-verse/air/runner"
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 )
 
 var cfgPath string
 
 var devCmd = &cobra.Command{
-	Use:  "dev",
-	RunE: devRunE,
+	Use:                "dev",
+	Short:              "Run the development server with live reloading",
+	RunE:               devRunE,
+	DisableFlagParsing: true,
 }
 
-func init() {
-	devCmd.Flags().StringVarP(&cfgPath, "config", "c", "", "path to Air config")
-}
+func devRunE(cmd *cobra.Command, _ []string) error {
+	flagSet := goflag.CommandLine
 
-func devRunE(cmd *cobra.Command, args []string) error {
-	c := flag.CommandLine
+	flag.CommandLine.AddGoFlagSet(flagSet)
+	cmd.Flags().AddFlagSet(flag.CommandLine)
 
-	if err := flag.CommandLine.Parse(args); err != nil {
+	argsMap := runner.ParseConfigFlag(flagSet)
+
+	if err := flagSet.Parse(os.Args[2:]); err != nil {
 		return err
 	}
 
-	cmdArgs := runner.ParseConfigFlag(c)
-	cfg, _ := runner.InitConfig(cfgPath, cmdArgs)
+	cfg, err := runner.InitConfig(cfgPath, argsMap)
+	if err != nil {
+		return err
+	}
 
 	engine, err := runner.NewEngineWithConfig(cfg, false)
 	if err != nil {
