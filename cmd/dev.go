@@ -11,45 +11,21 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var cfgPath string
+var (
+	cfgPath string
+	flagSet *goflag.FlagSet
+	argsMap map[string]runner.TomlInfo
+)
 
-func NewDevCmd() *cobra.Command {
-	flagSet := goflag.NewFlagSet("air", goflag.ContinueOnError)
-	flagSet.Parse(os.Args[2:])
-
-	argsMap := runner.ParseConfigFlag(flagSet)
-
-	devCmd := &cobra.Command{
-		Use:     "dev",
-		Short:   "Run the development server with live reloading",
-		Example: devExample,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := runner.InitConfig(cfgPath, argsMap)
-			if err != nil {
-				return err
-			}
-
-			engine, err := runner.NewEngineWithConfig(cfg, false)
-			if err != nil {
-				return err
-			}
-
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-
-			go func() {
-				<-sigs
-				engine.Stop()
-			}()
-
-			engine.Run()
-
-			return nil
-
-		},
+func init() {
+	flagSet = goflag.NewFlagSet("air", goflag.ContinueOnError)
+	if len(os.Args) > 2 {
+		flagSet.Parse(os.Args[2:])
 	}
 
 	pf := pflag.NewFlagSet("air", pflag.ContinueOnError)
+
+	argsMap = runner.ParseConfigFlag(flagSet)
 
 	flagSet.VisitAll(func(f *goflag.Flag) {
 		name := f.Name
@@ -61,8 +37,36 @@ func NewDevCmd() *cobra.Command {
 
 	devCmd.Flags().StringVarP(&cfgPath, "config", "c", "", "path air to config file")
 	devCmd.Flags().AddFlagSet(pf)
+}
 
-	return devCmd
+var devCmd = &cobra.Command{
+	Use:     "dev",
+	Short:   "Run the development server with live reloading",
+	Example: devExample,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := runner.InitConfig(cfgPath, argsMap)
+		if err != nil {
+			return err
+		}
+
+		engine, err := runner.NewEngineWithConfig(cfg, false)
+		if err != nil {
+			return err
+		}
+
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+
+		go func() {
+			<-sigs
+			engine.Stop()
+		}()
+
+		engine.Run()
+
+		return nil
+
+	},
 }
 
 var (
