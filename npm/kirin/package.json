@@ -2,7 +2,7 @@
     "name": "kirin",
     "version": "0.1.0",
     "bin": "lib/index.js",
-    "description": "Synchronize your forks with ease",
+    "description": "Scaffold a full-stack gRPC application with end-to-end type safety.",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/thetnaingtn/kirin.git"
