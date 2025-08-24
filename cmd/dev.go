@@ -49,15 +49,25 @@ var cfgPath string
 // }
 
 func NewDevCmd() *cobra.Command {
-
 	flagSet := goflag.NewFlagSet("air", goflag.ContinueOnError)
-	argsMap := runner.ParseConfigFlag(flagSet)
-
 	flagSet.Parse(os.Args[2:])
 
+	argsMap := runner.ParseConfigFlag(flagSet)
+
+	pf := pflag.NewFlagSet("air", pflag.ContinueOnError)
+
+	flagSet.VisitAll(func(f *goflag.Flag) {
+		name := f.Name
+		if name == "help" || name == "h" {
+			return // keep Cobra’s help, don’t import Air’s
+		}
+		pf.AddGoFlag(f)
+	})
+
 	devCmd := &cobra.Command{
-		Use:   "dev",
-		Short: "Run the development server with live reloading",
+		Use:     "dev",
+		Short:   "Run the development server with live reloading",
+		Example: devExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := runner.InitConfig(cfgPath, argsMap)
 			if err != nil {
@@ -84,10 +94,17 @@ func NewDevCmd() *cobra.Command {
 		},
 	}
 
-	pf := pflag.NewFlagSet("air", pflag.ContinueOnError)
-	pf.AddGoFlagSet(flagSet)
-
 	devCmd.Flags().AddFlagSet(pf)
+	devCmd.Flags().StringVarP(&cfgPath, "config", "c", "", "path air to config file")
 
 	return devCmd
 }
+
+var (
+	devExample = `
+# Start the development server with live reloading
+kirin dev
+# kirin dev use air under the hood so any air flags can be passed here
+kirin dev --color.build=red --build.cmd="go build -o ./mytmp ." --tmp_dir=mytmp --build.bin=./mytmp/main
+	`
+)
