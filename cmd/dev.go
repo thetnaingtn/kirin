@@ -54,16 +54,6 @@ func NewDevCmd() *cobra.Command {
 
 	argsMap := runner.ParseConfigFlag(flagSet)
 
-	pf := pflag.NewFlagSet("air", pflag.ContinueOnError)
-
-	flagSet.VisitAll(func(f *goflag.Flag) {
-		name := f.Name
-		if name == "help" || name == "h" {
-			return // keep Cobra’s help, don’t import Air’s
-		}
-		pf.AddGoFlag(f)
-	})
-
 	devCmd := &cobra.Command{
 		Use:     "dev",
 		Short:   "Run the development server with live reloading",
@@ -94,8 +84,18 @@ func NewDevCmd() *cobra.Command {
 		},
 	}
 
-	devCmd.Flags().AddFlagSet(pf)
+	pf := pflag.NewFlagSet("air", pflag.ContinueOnError)
+
+	flagSet.VisitAll(func(f *goflag.Flag) {
+		name := f.Name
+		if name == "help" || name == "h" {
+			return // keep Cobra’s help, don’t import Air’s
+		}
+		pf.AddGoFlag(f)
+	})
+
 	devCmd.Flags().StringVarP(&cfgPath, "config", "c", "", "path air to config file")
+	devCmd.Flags().AddFlagSet(pf)
 
 	return devCmd
 }
