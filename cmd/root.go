@@ -21,6 +21,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	devCmd := NewDevCmd()
 	rootCmd.AddCommand(doctorCmd, createCmd, devCmd)
 }
 
