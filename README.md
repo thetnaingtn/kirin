@@ -86,7 +86,9 @@ kirin doctor
 |---------|-------------|---------|
 | `kirin` | Launch interactive prompt (default) | - |
 | `kirin create` | Create project via command line | `c` |
-| `kirin doctor` | Check system requirements | d, doc |
+| `kirin dev` | Start development with live reload (uses Air) | - |
+| `kirin generate` | Generate code from protobuf definitions | `gen`, `g` |
+| `kirin doctor` | Check system requirements | `d`, `doc` |
 | `kirin --help` | Show help information | `-h` |
 
 ### Create Command Options
@@ -116,6 +118,65 @@ The `doctor` command checks your system for:
 - **Go**: Required for building the application
 - **Node.js**: Required for frontend development
 - **npm, yarn or pnpm**: Required for frontend package management
+
+## 🛠️ Development Workflow
+
+### Live Reload Development
+Kirin provides seamless live reload for both frontend and backend development:
+
+```bash
+# Navigate to your generated project
+cd myapp
+
+# Start development with live reload
+kirin dev
+```
+
+**What `kirin dev` does:**
+- **🔄 Hot Reload**: Automatically restarts the server when Go files change
+- **⚡ Fast Builds**: Uses [Air](https://github.com/cosmtrek/air) under the hood for efficient rebuilding
+- **🎯 Frontend Integration**: Serves frontend assets with automatic refresh
+- **📝 Live Logging**: Real-time logs and error reporting
+
+### Code Generation
+Generate TypeScript types and gRPC code from protobuf definitions:
+
+```bash
+# Generate code from protobuf files
+kirin generate
+# Short form
+kirin gen
+```
+
+**What `kirin generate` does:**
+- **🔍 Validation**: Checks for buf.yaml in proto directory first
+- **📁 Directory Change**: Switches to proto directory for buf operations
+- **🔄 Build Check**: Runs `buf build` to validate protobuf files
+- **🚫 Error Prevention**: Stops generation if validation fails
+- **⚡ Type Generation**: Creates TypeScript types for frontend
+- **🔄 gRPC Code**: Generates Go gRPC server and client code
+- **📁 Directory Restore**: Returns to original directory after completion
+
+### Other Development Commands
+
+1. **Run Tests**:
+   ```bash
+   go test ./...
+   ```
+
+2. **Check System Health**:
+   ```bash
+   kirin doctor
+   ```
+
+### Air Configuration
+Kirin automatically configures Air for optimal development experience. The live reload includes:
+- Go source files (`.go`)
+- Template files
+- Configuration files
+- Static assets
+
+No manual Air setup required - just run `kirin dev` and start coding!
 
 ## 🧩 Composite Architecture
 
