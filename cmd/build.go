@@ -10,36 +10,42 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	buildOutput         string
+	buildFrontendFolder string
+	buildMainFolder     string
+	buildPkgManager     string
+)
+
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build the full-stack application (frontend + backend)",
 	Long: `Build the full-stack application by compiling both frontend and backend.
 
 This command will:
-1. Look for a 'web' directory containing a Vite-powered frontend
-2. Detect the package manager (npm, yarn, or pnpm) from lock files
+1. Look for a frontend directory containing a Vite-powered frontend (default: 'web')
+2. Install dependencies using the detected package manager (npm, yarn, or pnpm)
 3. Run the frontend build process
-4. Find the main.go file (cmd/main.go or nested in cmd/<app>/main.go)
+4. Find the main.go file in the main directory (default: 'cmd') or nested subdirectories
 5. Compile the Go backend server
 
 Prerequisites:
-- web directory with Vite configuration (vite.config.js/ts)
-- package.json with build script in web directory
-- main.go file in cmd/ directory or nested subdirectory
+- Frontend directory with Vite configuration (vite.config.js/ts)
+- package.json with build script in frontend directory
+- main.go file in main directory or nested subdirectory
 - Package manager installed (npm, yarn, or pnpm)`,
 	Example: buildExample,
 	RunE:    buildRunE,
 }
 
 func buildRunE(cmd *cobra.Command, args []string) error {
-	// Check if web directory exists
-	webDir := "web"
-	if _, err := os.Stat(webDir); os.IsNotExist(err) {
-		return fmt.Errorf("web directory not found. Make sure you're in a project root with a 'web' directory")
+	// Check if frontend directory exists
+	if _, err := os.Stat(buildFrontendFolder); os.IsNotExist(err) {
+		return fmt.Errorf("frontend directory '%s' not found. Make sure you're in a project root with a frontend directory", buildFrontendFolder)
 	}
 
 	// Check for Vite configuration
-	configPath := filepath.Join(webDir, "vite.config.ts")
+	configPath := filepath.Join(buildFrontendFolder, "vite.config.ts")
 
 	hasViteConfig := false
 	if _, err := os.Stat(configPath); err == nil {
@@ -47,25 +53,50 @@ func buildRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if !hasViteConfig {
-		return fmt.Errorf("vite configuration not found in web directory. Please ensure vite.config.ts exists")
+		return fmt.Errorf("vite configuration not found in %s directory. Please ensure vite.config.ts exists", buildFrontendFolder)
 	}
 
 	// Check for package.json
-	packageJsonPath := filepath.Join(webDir, "package.json")
+	packageJsonPath := filepath.Join(buildFrontendFolder, "package.json")
 	if _, err := os.Stat(packageJsonPath); os.IsNotExist(err) {
-		return fmt.Errorf("package.json not found in web directory")
+		return fmt.Errorf("package.json not found in %s directory", buildFrontendFolder)
 	}
 
-	// Detect package manager
-	packageManager, err := detectPackageManager(webDir)
-	if err != nil {
-		return fmt.Errorf("failed to detect package manager: %w", err)
+	// Detect or use specified package manager
+	var packageManager string
+	var err error
+
+	if buildPkgManager != "" {
+		// Validate user-specified package manager
+		if buildPkgManager != "npm" && buildPkgManager != "yarn" && buildPkgManager != "pnpm" {
+			return fmt.Errorf("invalid package manager '%s'. Supported: npm, yarn, pnpm", buildPkgManager)
+		}
+
+		// Verify the specified package manager is installed
+		if _, err := exec.LookPath(buildPkgManager); err != nil {
+			return fmt.Errorf("specified package manager '%s' is not installed", buildPkgManager)
+		}
+
+		packageManager = buildPkgManager
+	} else {
+		// Auto-detect package manager from lock files
+		packageManager, err = detectPackageManager(buildFrontendFolder)
+		if err != nil {
+			return fmt.Errorf("failed to detect package manager: %w", err)
+		}
+	}
+
+	cmd.Printf("Installing dependencies with %s...\n", packageManager)
+
+	// Install dependencies
+	if err := installDependencies(buildFrontendFolder, packageManager); err != nil {
+		return fmt.Errorf("dependency installation failed: %w", err)
 	}
 
 	cmd.Printf("Building frontend with %s...\n", packageManager)
 
 	// Build frontend
-	if err := buildFrontend(webDir, packageManager); err != nil {
+	if err := buildFrontend(buildFrontendFolder, packageManager); err != nil {
 		return fmt.Errorf("frontend build failed: %w", err)
 	}
 
@@ -87,7 +118,7 @@ func buildRunE(cmd *cobra.Command, args []string) error {
 }
 
 // detectPackageManager detects the package manager based on lock files
-func detectPackageManager(webDir string) (string, error) {
+func detectPackageManager(frontendDir string) (string, error) {
 	// Check for lock files in order of preference
 	lockFiles := map[string]string{
 		"pnpm-lock.yaml":    "pnpm",
@@ -96,7 +127,7 @@ func detectPackageManager(webDir string) (string, error) {
 	}
 
 	for lockFile, manager := range lockFiles {
-		lockPath := filepath.Join(webDir, lockFile)
+		lockPath := filepath.Join(frontendDir, lockFile)
 		if _, err := os.Stat(lockPath); err == nil {
 			// Verify the package manager is installed
 			if _, err := exec.LookPath(manager); err != nil {
@@ -114,8 +145,30 @@ func detectPackageManager(webDir string) (string, error) {
 	return "", fmt.Errorf("no package manager found. Please install npm, yarn, or pnpm")
 }
 
+// installDependencies installs frontend dependencies
+func installDependencies(frontendDir, packageManager string) error {
+	var installCmd *exec.Cmd
+
+	switch packageManager {
+	case "npm":
+		installCmd = exec.Command("npm", "install")
+	case "yarn":
+		installCmd = exec.Command("yarn", "install")
+	case "pnpm":
+		installCmd = exec.Command("pnpm", "install")
+	default:
+		return fmt.Errorf("unsupported package manager: %s", packageManager)
+	}
+
+	installCmd.Dir = frontendDir
+	installCmd.Stdout = os.Stdout
+	installCmd.Stderr = os.Stderr
+
+	return installCmd.Run()
+}
+
 // buildFrontend runs the frontend build process
-func buildFrontend(webDir, packageManager string) error {
+func buildFrontend(frontendDir, packageManager string) error {
 	var buildCmd *exec.Cmd
 
 	switch packageManager {
@@ -129,30 +182,29 @@ func buildFrontend(webDir, packageManager string) error {
 		return fmt.Errorf("unsupported package manager: %s", packageManager)
 	}
 
-	buildCmd.Dir = webDir
+	buildCmd.Dir = frontendDir
 	buildCmd.Stdout = os.Stdout
 	buildCmd.Stderr = os.Stderr
 
 	return buildCmd.Run()
 }
 
-// findMainGo finds the main.go file in cmd directory or nested subdirectories
+// findMainGo finds the main.go file in main directory or nested subdirectories
 func findMainGo() (string, error) {
-	cmdDir := "cmd"
-	if _, err := os.Stat(cmdDir); os.IsNotExist(err) {
-		return "", fmt.Errorf("cmd directory not found")
+	if _, err := os.Stat(buildMainFolder); os.IsNotExist(err) {
+		return "", fmt.Errorf("%s directory not found", buildMainFolder)
 	}
 
 	var mainGoPath string
 
-	// Check for cmd/main.go first
-	directMainGo := filepath.Join(cmdDir, "main.go")
+	// Check for main.go directly in main folder first
+	directMainGo := filepath.Join(buildMainFolder, "main.go")
 	if _, err := os.Stat(directMainGo); err == nil {
 		return directMainGo, nil
 	}
 
-	// Look for main.go in nested cmd subdirectories
-	err := filepath.Walk(cmdDir, func(path string, info os.FileInfo, err error) error {
+	// Look for main.go in nested subdirectories
+	err := filepath.Walk(buildMainFolder, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -173,7 +225,7 @@ func findMainGo() (string, error) {
 	}
 
 	if mainGoPath == "" {
-		return "", fmt.Errorf("main.go not found in cmd directory or its subdirectories")
+		return "", fmt.Errorf("main.go not found in %s directory or its subdirectories", buildMainFolder)
 	}
 
 	return mainGoPath, nil
@@ -204,15 +256,15 @@ func buildBackend(cmd *cobra.Command, mainGoPath string) error {
 	var outputName string
 
 	// Check if custom output name is provided
-	if customOutput, _ := cmd.Flags().GetString("output"); customOutput != "" {
-		outputName = customOutput
+	if buildOutput != "" {
+		outputName = buildOutput
 	} else {
-		// If it's cmd/main.go, use current directory name
-		if filepath.Base(dir) == "cmd" {
+		// If it's mainFolder/main.go, use current directory name
+		if filepath.Base(dir) == buildMainFolder {
 			cwd, _ := os.Getwd()
 			outputName = filepath.Base(cwd)
 		} else {
-			// If it's cmd/app/main.go, use the app name
+			// If it's mainFolder/app/main.go, use the app name
 			outputName = filepath.Base(dir)
 		}
 	}
@@ -236,14 +288,27 @@ var buildExample = `
 # Build the full-stack application
 kirin build
 
+# With custom directories
+kirin build --frontend-folder ui --main-folder app
+
+# With specific package manager
+kirin build --pkg-manager pnpm
+
+# With custom output name
+kirin build --output myapp
+
 # The command will:
-# 1. Look for web/ directory with Vite configuration
-# 2. Detect package manager (pnpm, yarn, or npm)
-# 3. Run frontend build (npm/yarn/pnpm run build)
-# 4. Find main.go in cmd/ directory or subdirectories
-# 5. Compile Go backend to build/ directory
+# 1. Look for frontend directory with Vite configuration (default: web)
+# 2. Use specified package manager or auto-detect from lock files
+# 3. Install dependencies using package manager
+# 4. Run frontend build (npm/yarn/pnpm run build)
+# 5. Find main.go in main directory or subdirectories (default: cmd)
+# 6. Compile Go backend to build/ directory
 `
 
 func init() {
-	buildCmd.Flags().StringP("output", "o", "", "Output binary name (default: derived from directory)")
+	buildCmd.Flags().StringVar(&buildOutput, "output", "", "Output binary name (default: derived from directory)")
+	buildCmd.Flags().StringVar(&buildFrontendFolder, "frontend-folder", "web", "Frontend directory name")
+	buildCmd.Flags().StringVar(&buildMainFolder, "main-folder", "cmd", "Main directory name")
+	buildCmd.Flags().StringVar(&buildPkgManager, "pkg-manager", "", "Package manager to use (npm, yarn, pnpm). Auto-detected if not specified")
 }

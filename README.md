@@ -132,12 +132,22 @@ kirin create myapp --frontend svelte
 # Build full-stack application
 kirin build
 
+# With custom directories
+kirin build --frontend-folder ui --main-folder app
+
+# With specific package manager
+kirin build --pkg-manager pnpm
+
 # With custom output name
 kirin build --output myapp
 
 # Available flags
---output, -o      Output binary name (default: derived from directory)
---help, -h        Help for build command
+--frontend-folder     Frontend directory name (default "web")
+--main-folder         Main directory name (default "cmd")
+--pkg-manager         Package manager to use (npm, yarn, pnpm)
+                      Auto-detected from lock files if not specified
+--output, -o          Output binary name (default: derived from directory)
+--help, -h            Help for build command
 ```
 
 #### Development Command
