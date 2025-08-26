@@ -15,9 +15,10 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:  "kirin",
-	Long: longDescription,
-	RunE: rootRunE,
+	Use:   "kirin",
+	Short: "Scaffold full-stack gRPC applications in an interactive way",
+	Long:  longDescription,
+	RunE:  rootRunE,
 }
 
 func init() {
