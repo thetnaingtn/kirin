@@ -86,6 +86,7 @@ kirin doctor
 |---------|-------------|---------|
 | `kirin` | Launch interactive prompt (default) | - |
 | `kirin create` | Create project via command line | `c` |
+| `kirin build` | Build full-stack application (frontend + backend) | `b` |
 | `kirin dev` | Start development with live reload (uses Air) | - |
 | `kirin generate` | Generate code from protobuf definitions | `gen`, `g` |
 | `kirin doctor` | Check system requirements | `d`, `doc` |
@@ -157,6 +158,23 @@ kirin gen
 - **🔄 gRPC Code**: Generates Go gRPC server and client code
 - **📁 Directory Restore**: Returns to original directory after completion
 
+### Production Build
+Build the complete full-stack application for deployment:
+
+```bash
+# Build both frontend and backend
+kirin build
+# Short form
+kirin b
+```
+
+**What `kirin build` does:**
+- **🌐 Frontend Build**: Detects package manager (npm/yarn/pnpm) and runs frontend build
+- **⚡ Vite Integration**: Builds Vite-powered frontend from web/ directory
+- **🔍 Smart Detection**: Finds main.go in cmd/ or nested cmd/<app>/ directories  
+- **📦 Backend Compilation**: Compiles Go server to build/ directory
+- **🎯 Custom Output**: Optional custom binary name with --output flag
+
 ### Other Development Commands
 
 1. **Run Tests**:
@@ -212,6 +230,18 @@ kirin create analytics-app github.com/company/analytics --frontend svelte
 ### System Check
 ```bash
 kirin doctor
+```
+
+### Building for Production
+```bash
+# Build full-stack application
+kirin build
+
+# With custom output name
+kirin build --output myapp
+
+# Short form
+kirin b
 ```
 
 ## 🤝 Contributing
