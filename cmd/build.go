@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/thetnaingtn/kirin/internal/config"
 )
 
 var (
@@ -21,14 +22,7 @@ var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build the full-stack application (frontend + backend)",
 	Long: `Build the full-stack application by compiling both frontend and backend.
-
-This command will:
-1. Look for a frontend directory containing a Vite-powered frontend (default: 'web')
-2. Install dependencies using the detected package manager (npm, yarn, or pnpm)
-3. Run the frontend build process
-4. Find the main.go file in the main directory (default: 'cmd') or nested subdirectories
-5. Compile the Go backend server
-
+	
 Prerequisites:
 - Frontend directory with Vite configuration (vite.config.js/ts)
 - package.json with build script in frontend directory
@@ -39,14 +33,33 @@ Prerequisites:
 }
 
 func buildRunE(cmd *cobra.Command, args []string) error {
+	// Load existing configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Apply configuration values if flags weren't explicitly set
+	if !cmd.Flags().Changed("frontend-folder") && cfg.Build.FrontendFolder != "" {
+		buildFrontendFolder = cfg.Build.FrontendFolder
+	}
+	if !cmd.Flags().Changed("main-folder") && cfg.Build.MainFolder != "" {
+		buildMainFolder = cfg.Build.MainFolder
+	}
+	if !cmd.Flags().Changed("pkg-manager") && cfg.Build.PkgManager != "" {
+		buildPkgManager = cfg.Build.PkgManager
+	}
+	if !cmd.Flags().Changed("output") && cfg.Build.Output != "" {
+		buildOutput = cfg.Build.Output
+	}
+
 	// Check if frontend directory exists
 	if _, err := os.Stat(buildFrontendFolder); os.IsNotExist(err) {
 		return fmt.Errorf("frontend directory '%s' not found. Make sure you're in a project root with a frontend directory", buildFrontendFolder)
 	}
 
-	// Check for Vite configuration
 	configPath := filepath.Join(buildFrontendFolder, "vite.config.ts")
-
+	// Check for Vite configuration
 	hasViteConfig := false
 	if _, err := os.Stat(configPath); err == nil {
 		hasViteConfig = true
@@ -64,7 +77,6 @@ func buildRunE(cmd *cobra.Command, args []string) error {
 
 	// Detect or use specified package manager
 	var packageManager string
-	var err error
 
 	if buildPkgManager != "" {
 		// Validate user-specified package manager
@@ -111,6 +123,21 @@ func buildRunE(cmd *cobra.Command, args []string) error {
 
 	if err := buildBackend(cmd, mainGoPath); err != nil {
 		return fmt.Errorf("backend build failed: %w", err)
+	}
+
+	// Save configuration if any non-default values were used
+	if config.HasNonDefaultBuildValues(buildOutput, buildFrontendFolder, buildMainFolder, buildPkgManager) {
+		cfg.Build.Output = buildOutput
+		cfg.Build.FrontendFolder = buildFrontendFolder
+		cfg.Build.MainFolder = buildMainFolder
+		cfg.Build.PkgManager = buildPkgManager
+		cfg.Build.PkgManager = buildPkgManager
+
+		if err := config.SaveConfig(cfg); err != nil {
+			cmd.Printf("Warning: failed to save configuration: %v\n", err)
+		} else {
+			cmd.Println("Configuration saved to .kirin.toml")
+		}
 	}
 
 	cmd.Println("✨ Full-stack build completed successfully!")
@@ -296,14 +323,6 @@ kirin build --pkg-manager pnpm
 
 # With custom output name
 kirin build --output myapp
-
-# The command will:
-# 1. Look for frontend directory with Vite configuration (default: web)
-# 2. Use specified package manager or auto-detect from lock files
-# 3. Install dependencies using package manager
-# 4. Run frontend build (npm/yarn/pnpm run build)
-# 5. Find main.go in main directory or subdirectories (default: cmd)
-# 6. Compile Go backend to build/ directory
 `
 
 func init() {

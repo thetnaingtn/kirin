@@ -19,7 +19,8 @@ var (
 
 func init() {
 	flagSet = goflag.NewFlagSet("air", goflag.ContinueOnError)
-	if len(os.Args) > 2 {
+	// Only parse air flags if the command is "dev"
+	if len(os.Args) > 1 && os.Args[1] == "dev" && len(os.Args) > 2 {
 		flagSet.Parse(os.Args[2:])
 	}
 

@@ -7,6 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/thetnaingtn/kirin/internal/config"
+)
+
+var (
+	generateProtoFolder string
 )
 
 var generateCmd = &cobra.Command{
@@ -24,36 +29,46 @@ Prerequisites:
 }
 
 func generateRunE(cmd *cobra.Command, args []string) error {
+	// Load existing configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Apply configuration values if flags weren't explicitly set
+	if !cmd.Flags().Changed("proto-folder") && cfg.Generate.ProtoFolder != "" {
+		generateProtoFolder = cfg.Generate.ProtoFolder
+	}
+
 	// Check if buf is installed
 	if _, err := exec.LookPath("buf"); err != nil {
 		return fmt.Errorf("buf is not installed or not found in PATH. Please install buf from https://buf.build/docs/installation")
 	}
 
-	// Get proto directory from flag
-	protoDir, _ := cmd.Flags().GetString("proto-folder")
-	if _, err := os.Stat(protoDir); os.IsNotExist(err) {
-		return fmt.Errorf("proto directory '%s' not found. Make sure you're in a project root with a proto directory", protoDir)
+	// Look for proto directory
+	if _, err := os.Stat(generateProtoFolder); os.IsNotExist(err) {
+		return fmt.Errorf("proto directory '%s' not found. Make sure you're in a project root with a proto directory", generateProtoFolder)
 	}
 
 	// Check if proto directory contains .proto files
-	hasProtoFiles, err := hasProtobufFiles(protoDir)
+	hasProtoFiles, err := hasProtobufFiles(generateProtoFolder)
 	if err != nil {
 		return fmt.Errorf("error checking proto directory: %w", err)
 	}
 	if !hasProtoFiles {
-		return fmt.Errorf("no .proto files found in the '%s' directory", protoDir)
+		return fmt.Errorf("no .proto files found in the '%s' directory", generateProtoFolder)
 	}
 
 	// Check if buf.yaml exists in proto directory
-	bufYamlPath := filepath.Join(protoDir, "buf.yaml")
+	bufYamlPath := filepath.Join(generateProtoFolder, "buf.yaml")
 	if _, err := os.Stat(bufYamlPath); os.IsNotExist(err) {
-		return fmt.Errorf("configuration file buf.yaml not found in %s directory. Please ensure buf.yaml exists", protoDir)
+		return fmt.Errorf("configuration file buf.yaml not found in %s directory. Please ensure buf.yaml exists", generateProtoFolder)
 	}
 
 	// Check if buf.gen.yaml exists in proto directory
-	bufGenYamlPath := filepath.Join(protoDir, "buf.gen.yaml")
+	bufGenYamlPath := filepath.Join(generateProtoFolder, "buf.gen.yaml")
 	if _, err := os.Stat(bufGenYamlPath); os.IsNotExist(err) {
-		return fmt.Errorf("generation config buf.gen.yaml not found in %s directory. Please ensure buf.gen.yaml exists", protoDir)
+		return fmt.Errorf("generation config buf.gen.yaml not found in %s directory. Please ensure buf.gen.yaml exists", generateProtoFolder)
 	}
 
 	// Get current working directory to restore later
@@ -63,16 +78,9 @@ func generateRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// Change to proto directory
-	if err := os.Chdir(protoDir); err != nil {
+	if err := os.Chdir(generateProtoFolder); err != nil {
 		return fmt.Errorf("failed to change to proto directory: %w", err)
 	}
-
-	// Ensure we change back to original directory
-	defer func() {
-		if err := os.Chdir(currentDir); err != nil {
-			cmd.Printf("Warning: failed to change back to original directory: %v\n", err)
-		}
-	}()
 
 	cmd.Println("Validating protobuf files with buf build...")
 
@@ -96,6 +104,22 @@ func generateRunE(cmd *cobra.Command, args []string) error {
 
 	if err := generateCmd.Run(); err != nil {
 		return fmt.Errorf("buf generate failed: %w", err)
+	}
+
+	// Change back to original directory before saving config
+	if err := os.Chdir(currentDir); err != nil {
+		cmd.Printf("Warning: failed to change back to original directory: %v\n", err)
+	}
+
+	// Save configuration if any non-default values were used
+	if config.HasNonDefaultGenerateValues(generateProtoFolder) {
+		cfg.Generate.ProtoFolder = generateProtoFolder
+
+		if err := config.SaveConfig(cfg); err != nil {
+			cmd.Printf("Warning: failed to save configuration: %v\n", err)
+		} else {
+			cmd.Println("Configuration saved to .kirin.toml")
+		}
 	}
 
 	cmd.Println("✨ Code generation completed successfully!")
@@ -134,5 +158,5 @@ kirin gen --proto-folder api/proto
 `
 
 func init() {
-	generateCmd.Flags().StringP("proto-folder", "p", "proto", "Proto directory name (default: proto)")
+	generateCmd.Flags().StringVar(&generateProtoFolder, "proto-folder", "proto", "Proto directory name (default: proto)")
 }
