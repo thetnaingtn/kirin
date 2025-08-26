@@ -7,11 +7,11 @@
 
 <img src="./kirin.jpg" width="155" height="225">
 
-> **Kirin (Qilin)** is a legendary creature from East Asian mythology, often described as a chimeric beast with the body of a deer, scales of a dragon, and sometimes the tail of an ox. Like how the mythical Kirin is composed of parts from multiple magnificent creatures, kirin-generated applications are composed of multiple powerful technologies - gRPC-Gateway for unified gRPC and REST APIs, gRPC-Web for frontend connectivity, and embedded assets for self-contained deployment.
+> **Kirin (Qilin)** is a legendary creature from East Asian mythology, often described as a chimeric beast with the body of a deer, scales of a dragon, and sometimes the tail of an ox.
 >
 > *Image and creature information credited to [Yokai.com](https://yokai.com/kirin/)*
 
-## 🚀 What is kirin?
+## What is kirin?
 
 kirin is a scaffolding tool that creates full-stack gRPC applications with **frontend and backend coexisting in the same folder structure**. Since **Go 1.18**, embedding files directly into binary executables is natively supported, and kirin leverages this feature to create **self-contained applications** that include both frontend assets and backend logic in a single executable.
 
@@ -42,7 +42,30 @@ Download the latest binary from [GitHub Releases](https://github.com/thetnaingtn
 
 ## 🎮 Usage
 
-### Interactive Mode (Recommended)
+### Step 1: Check System Dependencies
+Before creating your first project, verify that all necessary dependencies are installed:
+
+```bash
+kirin doctor
+```
+
+The doctor command checks for these dependencies:
+
+**Required Dependencies:**
+- **git**: Required for cloning template repositories
+- **protoc**: Protocol buffer compiler for gRPC services
+- **protoc-gen-go**: Go plugin for protoc compiler
+- **protoc-gen-go-grpc**: Go gRPC plugin for protoc compiler
+
+**Optional Dependencies (Good to Have):**
+- **buf**: Modern protobuf tooling for validation and code generation
+- **Node.js & npm/yarn/pnpm**: Required for frontend development
+
+If any dependencies are missing, the doctor command will provide installation links and instructions.
+
+### Step 2: Create Your Project
+
+#### Option A: Interactive Mode (Recommended)
 Launch the interactive prompt to configure your project step by step:
 
 ```bash
@@ -56,7 +79,7 @@ kirin
 
 No need to remember complex commands or flags - simply answer each question and kirin will handle the rest.
 
-### Command Line Mode
+#### Option B: Command Line Mode
 Create a project directly with command line arguments:
 
 ```bash
@@ -72,13 +95,6 @@ kirin create myapp --frontend svelte
 kirin create myapp --frontend react
 ```
 
-### System Health Check
-Verify your system has all required dependencies:
-
-```bash
-kirin doctor
-```
-
 ## ⚙️ Available Commands & Configuration
 
 ### Commands Overview
@@ -92,147 +108,26 @@ kirin doctor
 | `kirin doctor` | Check system requirements | `d`, `doc` |
 | `kirin --help` | Show help information | `-h` |
 
-### Create Command Options
+### Command Usage
+
+#### Create Command
 ```bash
-kirin create <app-name> [module-name] [flags]
+# Basic usage with default React frontend
+kirin create myapp
 
-Arguments:
-  app-name      Name of the application to create
-  module-name   Go module name (optional, defaults to app-name)
+# With custom module name
+kirin create myapp github.com/myuser/myapp
 
-Flags:
-  -f, --frontend string   Frontend framework (default "react")
-                         Supported: react, vue, svelte
-  -h, --help             Help for create command
+# With specific frontend framework
+kirin create myapp --frontend svelte
+
+# Available flags
+--frontend, -f    Frontend framework (default "react")
+                  Supported: react, vue, svelte
+--help, -h        Help for create command
 ```
 
-### Frontend Frameworks
-| Framework | Description | Status |
-|-----------|-------------|--------|
-| **React** | Popular JavaScript library for building UIs | ✅ Supported |
-| **Vue** | Progressive JavaScript framework | ✅ Supported |
-| **Svelte** | Cybernetically enhanced web apps | ✅ Supported |
-
-### Doctor Command
-The `doctor` command checks your system for:
-- **Git**: Required for cloning template repositories
-- **Go**: Required for building the application
-- **Node.js**: Required for frontend development
-- **npm, yarn or pnpm**: Required for frontend package management
-
-## 🛠️ Development Workflow
-
-### Live Reload Development
-Kirin provides seamless live reload for both frontend and backend development:
-
-```bash
-# Navigate to your generated project
-cd myapp
-
-# Start development with live reload
-kirin dev
-```
-
-**What `kirin dev` does:**
-- **🔄 Hot Reload**: Automatically restarts the server when Go files change
-- **⚡ Fast Builds**: Uses [Air](https://github.com/cosmtrek/air) under the hood for efficient rebuilding
-- **🎯 Frontend Integration**: Serves frontend assets with automatic refresh
-- **📝 Live Logging**: Real-time logs and error reporting
-
-### Code Generation
-Generate TypeScript types and gRPC code from protobuf definitions:
-
-```bash
-# Generate code from protobuf files
-kirin generate
-# Short form
-kirin gen
-```
-
-**What `kirin generate` does:**
-- **🔍 Validation**: Checks for buf.yaml in proto directory first
-- **📁 Directory Change**: Switches to proto directory for buf operations
-- **🔄 Build Check**: Runs `buf build` to validate protobuf files
-- **🚫 Error Prevention**: Stops generation if validation fails
-- **⚡ Type Generation**: Creates TypeScript types for frontend
-- **🔄 gRPC Code**: Generates Go gRPC server and client code
-- **📁 Directory Restore**: Returns to original directory after completion
-
-### Production Build
-Build the complete full-stack application for deployment:
-
-```bash
-# Build both frontend and backend
-kirin build
-# Short form
-kirin b
-```
-
-**What `kirin build` does:**
-- **🌐 Frontend Build**: Detects package manager (npm/yarn/pnpm) and runs frontend build
-- **⚡ Vite Integration**: Builds Vite-powered frontend from web/ directory
-- **🔍 Smart Detection**: Finds main.go in cmd/ or nested cmd/<app>/ directories  
-- **📦 Backend Compilation**: Compiles Go server to build/ directory
-- **🎯 Custom Output**: Optional custom binary name with --output flag
-
-### Other Development Commands
-
-1. **Run Tests**:
-   ```bash
-   go test ./...
-   ```
-
-2. **Check System Health**:
-   ```bash
-   kirin doctor
-   ```
-
-### Air Configuration
-Kirin automatically configures Air for optimal development experience. The live reload includes:
-- Go source files (`.go`)
-- Template files
-- Configuration files
-- Static assets
-
-No manual Air setup required - just run `kirin dev` and start coding!
-
-## 🧩 Composite Architecture
-
-Like the mythical Kirin composed of multiple creature parts, generated applications include:
-- **gRPC-Gateway**: Unified gRPC and REST API endpoints
-- **gRPC-Web**: Frontend connectivity to gRPC services
-- **Protocol Buffers**: Type-safe communication contracts
-- **Embedded Assets**: Self-contained frontend resources using Go 1.18+ embed
-
-## 📋 Examples
-
-### Creating a React Application
-```bash
-# Interactive mode
-kirin
-
-# Command line mode
-kirin create my-dashboard
-kirin create my-dashboard github.com/company/my-dashboard
-kirin create my-dashboard --frontend react
-```
-
-### Creating a Vue Application
-```bash
-kirin create admin-panel --frontend vue
-```
-
-### Creating a Svelte Application
-```bash
-kirin create analytics-app github.com/company/analytics --frontend svelte
-```
-
-### System Check
-```bash
-kirin doctor
-```
-
-### Building for Production
+#### Build Command
 ```bash
 # Build full-stack application
 kirin build
@@ -240,10 +135,49 @@ kirin build
 # With custom output name
 kirin build --output myapp
 
-# Short form
-kirin b
+# Available flags
+--output, -o      Output binary name (default: derived from directory)
+--help, -h        Help for build command
 ```
 
+#### Development Command
+```bash
+# Start development server with live reload
+kirin dev
+
+# All Air flags are supported and delegated to Air
+kirin dev --build.cmd "go build -o ./tmp/main ."
+kirin dev --build.bin "./tmp/main"
+
+# Available flags
+# All Air configuration flags are supported
+--help, -h        Help for dev command
+```
+
+#### Generate Command
+```bash
+# Generate code from protobuf definitions
+kirin generate
+
+# With custom proto directory
+kirin generate --proto-folder api/proto
+
+# Available flags
+--proto-folder, -p    Proto directory name (default "proto")
+--help, -h            Help for generate command
+```
+
+#### Doctor Command
+```bash
+# Check system dependencies
+kirin doctor
+
+# Available aliases
+kirin doc
+kirin d
+
+# No additional flags available
+```
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
