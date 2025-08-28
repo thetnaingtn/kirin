@@ -2,6 +2,7 @@ package cmd
 
 import (
 	goflag "flag"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,23 +19,19 @@ var (
 )
 
 func init() {
-	flagSet = goflag.NewFlagSet("air", goflag.ContinueOnError)
+	flagSet = goflag.NewFlagSet("dev", goflag.ContinueOnError)
+	flagSet.SetOutput(io.Discard) // discard output. will show output only from fang library
+
 	// Only parse air flags if the command is "dev"
 	if len(os.Args) > 1 && os.Args[1] == "dev" && len(os.Args) > 2 {
 		flagSet.Parse(os.Args[2:])
 	}
 
-	pf := pflag.NewFlagSet("air", pflag.ContinueOnError)
+	pf := pflag.NewFlagSet("dev", pflag.ContinueOnError)
 
 	argsMap = runner.ParseConfigFlag(flagSet)
 
-	flagSet.VisitAll(func(f *goflag.Flag) {
-		name := f.Name
-		if name == "help" || name == "h" {
-			return // keep Cobra’s help, don’t import Air’s
-		}
-		pf.AddGoFlag(f)
-	})
+	pf.AddGoFlagSet(flagSet)
 
 	devCmd.Flags().StringVarP(&cfgPath, "config", "c", "", "path air to config file")
 	devCmd.Flags().AddFlagSet(pf)
