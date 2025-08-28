@@ -82,7 +82,7 @@ func SaveConfig(config *Config) error {
 
 // HasNonDefaultBuildValues checks if any build configuration values are non-default
 func HasNonDefaultBuildValues(output, frontendFolder, mainFolder, pkgManager string) bool {
-	return output != "build" || frontendFolder != "web" || mainFolder != "cmd" || pkgManager != "auto"
+	return output != "" || frontendFolder != "web" || mainFolder != "cmd" || pkgManager != ""
 }
 
 // HasNonDefaultGenerateValues checks if any generate configuration values are non-default

@@ -130,8 +130,7 @@ func buildRunE(cmd *cobra.Command, args []string) error {
 		cfg.Build.Output = buildOutput
 		cfg.Build.FrontendFolder = buildFrontendFolder
 		cfg.Build.MainFolder = buildMainFolder
-		cfg.Build.PkgManager = buildPkgManager
-		cfg.Build.PkgManager = buildPkgManager
+		cfg.Build.PkgManager = packageManager
 
 		if err := config.SaveConfig(cfg); err != nil {
 			cmd.Printf("Warning: failed to save configuration: %v\n", err)
