@@ -95,6 +95,66 @@ kirin create myapp --frontend svelte
 kirin create myapp --frontend react
 ```
 
+### Step 3: Start Development Server
+
+Once your project is created, you can start developing with live reload capabilities:
+
+#### Backend Development
+Start the backend development server with automatic reloading:
+
+```bash
+kirin dev
+```
+
+**Air Integration**: The `dev` command uses [air](https://github.com/air-verse/air) under the hood for live reloading, which means **all air flags are supported** and can be passed directly:
+
+```bash
+# Use Air flags for custom configuration
+kirin dev --build.cmd "go build -o ./tmp/main ." --build.bin "./tmp/main"
+kirin dev --tmp_dir custom_tmp --build.delay 1000
+kirin dev --color.build red --color.runner green
+```
+
+#### Frontend Development
+For frontend development, navigate to your frontend folder and start the development server:
+
+```bash
+# Navigate to frontend directory (default: 'web')
+cd web
+
+# Start frontend dev server (depends on your package manager)
+npm run dev      # if using npm
+yarn dev         # if using yarn  
+pnpm dev         # if using pnpm
+```
+
+If you used a custom frontend folder name during project creation, replace `web` with your specified folder name:
+
+```bash
+# Example with custom frontend folder
+cd ui            # if you specified --frontend-folder=ui
+npm run dev
+```
+
+#### Full-Stack Development
+For the best development experience, run both servers simultaneously:
+
+```bash
+# Terminal 1: Backend with live reload
+kirin dev
+
+# Terminal 2: Frontend development server
+cd web && npm run dev
+```
+
+This setup provides:
+- **Backend**: Automatic Go server restart on code changes
+- **Frontend**: Hot module replacement for instant UI updates
+- **gRPC**: Seamless communication between frontend and backend
+
+#### Configuration Persistence
+kirin automatically saves your preferences for certain command for example, build to a `.kirin.toml` file in your project root. This means you only need to specify custom settings once - subsequent commands will remember your choices.
+
 ## ⚙️ Available Commands & Configuration
 
 ### Commands Overview
@@ -172,9 +232,19 @@ kirin generate
 # With custom proto directory
 kirin generate --proto-folder api/proto
 
+# Initialize buf configuration in existing proto directory
+kirin generate init
+
+# Initialize buf config in custom proto directory
+kirin generate init --proto-folder api/proto
+
 # Available flags
 --proto-folder, -p    Proto directory name (default "proto")
 --help, -h            Help for generate command
+
+# Subcommands
+init                  Initialize buf configuration files (buf.yaml, buf.gen.yaml)
+                      in existing proto directory
 ```
 
 #### Doctor Command
