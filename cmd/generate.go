@@ -14,7 +14,6 @@ import (
 
 var (
 	generateProtoFolder string
-	initProtoFolder     string
 )
 
 var generateCmd = &cobra.Command{
@@ -31,25 +30,8 @@ Prerequisites:
 	RunE:    generateRunE,
 }
 
-// init subcommand for generate
-var generateInitCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize buf configuration files in existing proto directory",
-	Long: `Initialize buf configuration files (buf.yaml and buf.gen.yaml) in an existing proto directory.
-This command assumes you already have a proto directory with .proto files and adds the necessary 
-buf configuration files to enable code generation.`,
-	Example: `# Initialize buf config in default proto directory
-kirin generate init
-
-# Initialize buf config in custom proto directory  
-kirin generate init --proto-folder=api/proto`,
-	RunE: generateInitRunE,
-}
-
 func init() {
 	generateCmd.Flags().StringVar(&generateProtoFolder, "proto-folder", "proto", "Proto directory name (default: proto)")
-	generateInitCmd.Flags().StringVar(&initProtoFolder, "proto-folder", "proto", "Proto directory name (default: proto)")
-	generateCmd.AddCommand(generateInitCmd)
 }
 
 func generateRunE(cmd *cobra.Command, args []string) error {
@@ -83,16 +65,39 @@ func generateRunE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no .proto files found in the '%s' directory", generateProtoFolder)
 	}
 
-	// Check if buf.yaml exists in proto directory
+	// Check if both configuration files already exist
+	bufYamlExists := true
+	bufGenYamlExists := true
+
 	bufYamlPath := filepath.Join(generateProtoFolder, "buf.yaml")
+	bufGenYamlPath := filepath.Join(generateProtoFolder, "buf.gen.yaml")
+
 	if _, err := os.Stat(bufYamlPath); os.IsNotExist(err) {
-		return fmt.Errorf("configuration file buf.yaml not found in %s directory. Please ensure buf.yaml exists", generateProtoFolder)
+		bufYamlExists = false
 	}
 
-	// Check if buf.gen.yaml exists in proto directory
-	bufGenYamlPath := filepath.Join(generateProtoFolder, "buf.gen.yaml")
 	if _, err := os.Stat(bufGenYamlPath); os.IsNotExist(err) {
-		return fmt.Errorf("generation config buf.gen.yaml not found in %s directory. Please ensure buf.gen.yaml exists", generateProtoFolder)
+		bufGenYamlExists = false
+	}
+
+	// Check if buf.yaml exists in proto directory
+	if !bufYamlExists {
+		cmd.Println("Configuration file buf.yaml not found. Creating a buf.yaml...")
+
+		if err := os.WriteFile(bufYamlPath, []byte(bufYamlTemplate), 0644); err != nil {
+			return fmt.Errorf("failed to create buf.yaml: %w", err)
+		}
+
+		cmd.Printf("✅ Created buf.yaml in %s\n", generateProtoFolder)
+	}
+
+	// Create buf.gen.yaml if it doesn't exist
+	if !bufGenYamlExists {
+		cmd.Println("Configuration file buf.gen.yaml not found. Creating a buf.gen.yaml...")
+		if err := os.WriteFile(bufGenYamlPath, []byte(getBufGenYamlTemplate()), 0644); err != nil {
+			return fmt.Errorf("failed to create buf.gen.yaml: %w", err)
+		}
+		cmd.Printf("✅ Created buf.gen.yaml in %s\n", generateProtoFolder)
 	}
 
 	// Get current working directory to restore later
@@ -166,81 +171,6 @@ func hasProtobufFiles(dir string) (bool, error) {
 	})
 
 	return hasProto, err
-}
-
-func generateInitRunE(cmd *cobra.Command, args []string) error {
-	// Load existing configuration
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Apply configuration values if flags weren't explicitly set
-	if !cmd.Flags().Changed("proto-folder") && cfg.Generate.ProtoFolder != "" {
-		initProtoFolder = cfg.Generate.ProtoFolder
-	}
-
-	// Check if proto directory exists
-	if _, err := os.Stat(initProtoFolder); os.IsNotExist(err) {
-		return fmt.Errorf("proto directory '%s' not found. Please ensure the proto directory exists with your protobuf files", initProtoFolder)
-	}
-
-	bufYamlPath := filepath.Join(initProtoFolder, "buf.yaml")
-	bufGenYamlPath := filepath.Join(initProtoFolder, "buf.gen.yaml")
-
-	// Check if both configuration files already exist
-	bufYamlExists := true
-	bufGenYamlExists := true
-
-	if _, err := os.Stat(bufYamlPath); os.IsNotExist(err) {
-		bufYamlExists = false
-	}
-
-	if _, err := os.Stat(bufGenYamlPath); os.IsNotExist(err) {
-		bufGenYamlExists = false
-	}
-
-	// If both files already exist, inform user and exit
-	if bufYamlExists && bufGenYamlExists {
-		cmd.Printf("ℹ️  Buf configuration files already exist in %s\n", initProtoFolder)
-		cmd.Printf("   - buf.yaml ✅\n")
-		cmd.Printf("   - buf.gen.yaml ✅\n")
-		cmd.Println("Your proto directory is already configured for buf!")
-		cmd.Println("You can run 'kirin generate' to generate code from your protobuf files.")
-		return nil
-	}
-
-	// Create buf.yaml if it doesn't exist
-	if !bufYamlExists {
-		if err := os.WriteFile(bufYamlPath, []byte(bufYamlTemplate), 0644); err != nil {
-			return fmt.Errorf("failed to create buf.yaml: %w", err)
-		}
-		cmd.Printf("✅ Created buf.yaml in %s\n", initProtoFolder)
-	}
-
-	// Create buf.gen.yaml if it doesn't exist
-	if !bufGenYamlExists {
-		if err := os.WriteFile(bufGenYamlPath, []byte(getBufGenYamlTemplate()), 0644); err != nil {
-			return fmt.Errorf("failed to create buf.gen.yaml: %w", err)
-		}
-		cmd.Printf("✅ Created buf.gen.yaml in %s\n", initProtoFolder)
-	}
-
-	// Save configuration if any non-default values were used
-	if config.HasNonDefaultGenerateValues(initProtoFolder) {
-		cfg.Generate.ProtoFolder = initProtoFolder
-
-		if err := config.SaveConfig(cfg); err != nil {
-			cmd.Printf("Warning: failed to save configuration: %v\n", err)
-		} else {
-			cmd.Println("Configuration saved to .kirin.toml")
-		}
-	}
-
-	cmd.Printf("Buf configuration initialized successfully in %s!\n", initProtoFolder)
-	cmd.Println("You can now run 'kirin generate' to generate code from your protobuf files.")
-
-	return nil
 }
 
 // getModuleName reads the module name from go.mod file in the current directory
