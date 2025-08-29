@@ -20,12 +20,6 @@ var generateCmd = &cobra.Command{
 	Use:     "generate",
 	Aliases: []string{"gen", "g"},
 	Short:   "Generate code from protobuf definitions using buf",
-	Long: `Generate code from protobuf definitions using buf.
-Prerequisites:
-- buf must be installed (https://buf.build/docs/installation)
-- proto directory with valid protobuf files
-- buf.yaml configuration file in the proto directory
-- buf.gen.yaml configuration file in the proto directory (for generation)`,
 	Example: generateExample,
 	RunE:    generateRunE,
 }
