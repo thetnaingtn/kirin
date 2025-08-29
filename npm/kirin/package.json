@@ -1,6 +1,6 @@
 {
     "name": "kirin",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "bin": "lib/index.js",
     "description": "Scaffold a full-stack gRPC application with end-to-end type safety.",
     "repository": {
@@ -25,11 +25,11 @@
         "typescript": "5.8.3"
     },
     "optionalDependencies": {
-        "kirin-darwin-arm64": "0.2.0",
-        "kirin-darwin-amd64": "0.2.0",
-        "kirin-linux-arm64": "0.2.0",
-        "kirin-linux-amd64": "0.2.0",
-        "kirin-windows-arm64": "0.2.0",
-        "kirin-windows-amd64": "0.2.0"
+        "kirin-darwin-arm64": "0.2.1",
+        "kirin-darwin-amd64": "0.2.1",
+        "kirin-linux-arm64": "0.2.1",
+        "kirin-linux-amd64": "0.2.1",
+        "kirin-windows-arm64": "0.2.1",
+        "kirin-windows-amd64": "0.2.1"
     }
 }
