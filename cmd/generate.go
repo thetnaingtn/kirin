@@ -242,25 +242,56 @@ func generateInitRunE(cmd *cobra.Command, args []string) error {
 }
 
 var (
-	bufYamlTemplate = `version: v1
+	bufYamlTemplate = `version: v2
 deps:
   - buf.build/googleapis/googleapis
+lint:
+  use:
+    - BASIC
+  except:
+    - ENUM_VALUE_PREFIX
+    - FIELD_NOT_REQUIRED
+    - PACKAGE_DIRECTORY_MATCH
+    - PACKAGE_NO_IMPORT_CYCLE
+    - PACKAGE_VERSION_SUFFIX
+  disallow_comment_ignores: true
 breaking:
   use:
     - FILE
-lint:
-  use:
-    - DEFAULT
+  except:
+    - EXTENSION_NO_DELETE
+    - FIELD_SAME_DEFAULT
 `
 
-	bufGenYamlTemplate = `version: v1
+	bufGenYamlTemplate = `version: v2
+managed:
+  enabled: true
+  disable:
+    - file_option: go_package
+      module: buf.build/googleapis/googleapis
+  override:
+    - file_option: go_package_prefix
+      value: github.com/thetnaingtn/tidy-url
 plugins:
-  - plugin: buf.build/protocolbuffers/go
-    out: gen/go
+  - remote: buf.build/protocolbuffers/go
+    out: gen
     opt: paths=source_relative
-  - plugin: buf.build/grpc/go
-    out: gen/go
+  - remote: buf.build/grpc/go
+    out: gen
     opt: paths=source_relative
+  - remote: buf.build/grpc-ecosystem/gateway
+    out: gen
+    opt: paths=source_relative
+  - remote: buf.build/community/stephenh-ts-proto
+    out: ../web/src/types/proto
+    opt:
+      - env=browser
+      - useOptionals=messages
+      - outputServices=generic-definitions
+      - outputJsonMethods=false
+      - useExactTypes=false
+      - esModuleInterop=true
+      - stringEnums=true
 `
 
 	generateExample = `
