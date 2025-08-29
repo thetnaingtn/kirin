@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/thetnaingtn/kirin/internal/config"
@@ -218,7 +220,7 @@ func generateInitRunE(cmd *cobra.Command, args []string) error {
 
 	// Create buf.gen.yaml if it doesn't exist
 	if !bufGenYamlExists {
-		if err := os.WriteFile(bufGenYamlPath, []byte(bufGenYamlTemplate), 0644); err != nil {
+		if err := os.WriteFile(bufGenYamlPath, []byte(getBufGenYamlTemplate()), 0644); err != nil {
 			return fmt.Errorf("failed to create buf.gen.yaml: %w", err)
 		}
 		cmd.Printf("✅ Created buf.gen.yaml in %s\n", initProtoFolder)
@@ -241,6 +243,69 @@ func generateInitRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// getModuleName reads the module name from go.mod file in the current directory
+func getModuleName() string {
+	goModPath := "go.mod"
+
+	// Check if go.mod exists
+	if _, err := os.Stat(goModPath); os.IsNotExist(err) {
+		return "your/module/name" // fallback if no go.mod found
+	}
+
+	file, err := os.Open(goModPath)
+	if err != nil {
+		return "your/module/name" // fallback on error
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if after, ok := strings.CutPrefix(line, "module "); ok {
+			moduleName := after
+			moduleName = strings.TrimSpace(moduleName)
+			return moduleName
+		}
+	}
+
+	return "your/module/name" // fallback if module line not found
+}
+
+// getBufGenYamlTemplate returns the buf.gen.yaml template with the current module name
+func getBufGenYamlTemplate() string {
+	moduleName := getModuleName()
+	return fmt.Sprintf(`version: v2
+managed:
+  enabled: true
+  disable:
+    - file_option: go_package
+      module: buf.build/googleapis/googleapis
+  override:
+    - file_option: go_package_prefix
+      value: %s
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go
+    out: gen
+    opt: paths=source_relative
+  - remote: buf.build/grpc-ecosystem/gateway
+    out: gen
+    opt: paths=source_relative
+  - remote: buf.build/community/stephenh-ts-proto
+    out: ../%s/src/types/proto
+    opt:
+      - env=browser
+      - useOptionals=messages
+      - outputServices=generic-definitions
+      - outputJsonMethods=false
+      - useExactTypes=false
+      - esModuleInterop=true
+      - stringEnums=true
+`, moduleName, buildFrontendFolder)
+}
+
 var (
 	bufYamlTemplate = `version: v2
 deps:
@@ -261,37 +326,6 @@ breaking:
   except:
     - EXTENSION_NO_DELETE
     - FIELD_SAME_DEFAULT
-`
-
-	bufGenYamlTemplate = `version: v2
-managed:
-  enabled: true
-  disable:
-    - file_option: go_package
-      module: buf.build/googleapis/googleapis
-  override:
-    - file_option: go_package_prefix
-      value: github.com/thetnaingtn/tidy-url
-plugins:
-  - remote: buf.build/protocolbuffers/go
-    out: gen
-    opt: paths=source_relative
-  - remote: buf.build/grpc/go
-    out: gen
-    opt: paths=source_relative
-  - remote: buf.build/grpc-ecosystem/gateway
-    out: gen
-    opt: paths=source_relative
-  - remote: buf.build/community/stephenh-ts-proto
-    out: ../web/src/types/proto
-    opt:
-      - env=browser
-      - useOptionals=messages
-      - outputServices=generic-definitions
-      - outputJsonMethods=false
-      - useExactTypes=false
-      - esModuleInterop=true
-      - stringEnums=true
 `
 
 	generateExample = `
