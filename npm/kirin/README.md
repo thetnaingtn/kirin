@@ -4,13 +4,6 @@
 </div>
 
 ---
-
-<img src="./kirin.jpg" width="155" height="225">
-
-> **Kirin (Qilin)** is a legendary creature from East Asian mythology, often described as a chimeric beast with the body of a deer, scales of a dragon, and sometimes the tail of an ox.
->
-> *Image and creature information credited to [Yokai.com](https://yokai.com/kirin/)*
-
 ## What is kirin?
 
 kirin is a scaffolding tool that creates full-stack gRPC applications with **frontend and backend coexisting in the same folder structure**. Since **Go 1.18**, embedding files directly into binary executables is natively supported, and kirin leverages this feature to create **self-contained applications** that include both frontend assets and backend logic in a single executable.
