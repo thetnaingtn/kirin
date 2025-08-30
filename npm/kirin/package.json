@@ -8,7 +8,7 @@
         "url": "git+https://github.com/thetnaingtn/kirin.git"
     },
     "keywords": ["go", "cli", "gRPC", "gRPC-Web", "gRPC-Gateway", "bubbletea"],
-    "license": "MIT OR Apache-2.0",
+    "license": "GPL-3.0",
     "homepage": "https://github.com/thetnaingtn/kirin?tab=readme-ov-file#kirin",
     "scripts": {
         "typecheck": "tsc --noEmit",
