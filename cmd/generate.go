@@ -112,9 +112,19 @@ func generateRunE(cmd *cobra.Command, args []string) error {
 	buildCmd.Stdout = os.Stdout
 	buildCmd.Stderr = os.Stderr
 
-	if err := buildCmd.Run(); err != nil {
-		cmd.Println("Validation failed!")
-		return fmt.Errorf("buf build failed with validation errors. Please fix the protobuf issues above before generating code")
+	err = buildCmd.Run()
+
+	if err != nil {
+		cmd.Println("Updating dependencies with buf dep update...")
+		// try to update dependencies
+		depsUpdateCmd := exec.Command("buf", "dep", "update")
+		depsUpdateCmd.Stdout = os.Stdout
+		depsUpdateCmd.Stderr = os.Stderr
+
+		if err := depsUpdateCmd.Run(); err != nil {
+			cmd.Println("Failed to update dependencies!")
+			return fmt.Errorf("buf build failed with validation errors. Please fix the protobuf issues above before generating code")
+		}
 	}
 
 	cmd.Println("Validation passed!")
