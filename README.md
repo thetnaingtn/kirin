@@ -55,9 +55,6 @@ The doctor command checks for these dependencies:
 * **protoc**: Protocol buffer compiler for gRPC services
 * **protoc-gen-go**: Go plugin for protoc compiler
 * **protoc-gen-go-grpc**: Go gRPC plugin for protoc compiler
-
-**Optional Dependencies (Good to Have):**
-
 * **buf**: Modern protobuf tooling for validation and code generation
 * **Node.js & npm/yarn/pnpm**: Required for frontend development and TypeScript client consumption
 
