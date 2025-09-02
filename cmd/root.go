@@ -2,7 +2,11 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"regexp"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/fang"
@@ -31,6 +35,10 @@ func Execute() {
 	}
 }
 
+func SetVersionInfo(ver, d string) {
+	rootCmd.SetVersionTemplate(fmt.Sprintf("%s Build at: %s", ver, d))
+}
+
 func rootRunE(cmd *cobra.Command, args []string) error {
 	prompt := ui.NewPrompt()
 
@@ -40,4 +48,21 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	return nil
+}
+
+var latestVersionRegexp = regexp.MustCompile(`"name":\s*?"v(.*?)"`)
+
+func latestVersion() (string, error) {
+	resp, err := http.Get("https://api.github.com/repos/thetnaingtn/kirin/releases/latest")
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch latest version: %w", err)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+
 }
