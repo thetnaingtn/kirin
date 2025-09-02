@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	longDescription = `🐉  kirin is a CLI tool that scaffolds full-stack gRPC applications with end-to-end type safety.`
+	longDescription = `kirin is a CLI tool that scaffolds full-stack gRPC applications with end-to-end type safety.`
 )
 
 var rootCmd = &cobra.Command{
@@ -35,8 +35,8 @@ func Execute() {
 	}
 }
 
-func SetVersionInfo(ver, d string) {
-	rootCmd.SetVersionTemplate(fmt.Sprintf("%s Build at: %s", ver, d))
+func SetVersionInfo(ver string) {
+	rootCmd.SetVersionTemplate(fmt.Sprintf("v%s", ver))
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
