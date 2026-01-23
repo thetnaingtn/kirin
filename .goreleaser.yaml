@@ -20,7 +20,7 @@ builds:
       - windows
       - darwin
     binary: kirin
-    main: ./kirin
+    main: ./
 
 archives:
   - formats: [tar.gz]
